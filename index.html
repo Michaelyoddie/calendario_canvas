@@ -1402,12 +1402,15 @@ function renderListaClases() {
   const cont = document.getElementById("lista-clases");
   const btn  = document.getElementById("btn-limpiar-clases");
 
+  if (!cont) return; // Seguridad: si no existe el contenedor, no hace nada
+
   if (state.clases.length === 0) {
     cont.innerHTML = `<div class="empty-state">El calendario aparecerá aquí luego de generarlo.</div>`;
-    btn.style.display = "none";
+    if (btn) btn.style.display = "none"; 
     return;
   }
-  btn.style.display = "";
+  
+  if (btn) btn.style.display = "block"; // Solo cambia el estilo si el botón existe
 
   cont.innerHTML = state.clases.map((c, i) => `
     <div class="item-card">
@@ -1860,5 +1863,6 @@ function copiarContenidoActual() {
 }
 
 </script>
+<script src="logica.js"></script>
 </body>
 </html>
