@@ -687,7 +687,7 @@ document.getElementById("toggle-tutorias").addEventListener("change", function (
 // ═══════════════════════════════════════════════════════
 // LIVE UPDATE en campos de texto
 // ═══════════════════════════════════════════════════════
-["tutor","asignatura","zoom","escuela"].forEach(id => {
+["tutor","asignatura","zoom","zoom-pin","escuela"].forEach(id => {
   document.getElementById(id).addEventListener("input", actualizarPreview);
   document.getElementById(id).addEventListener("change", actualizarPreview);
 });
@@ -1004,7 +1004,8 @@ function guardarProgreso() {
             asignatura: document.getElementById('asignatura').value,
             zoom: document.getElementById('zoom').value,
             escuela: document.getElementById('escuela').value,
-            inicio: document.getElementById('inicio-bimestre').value
+            inicio: document.getElementById('inicio-bimestre').value,
+            zoomPin: document.getElementById('zoom-pin') ? document.getElementById('zoom-pin').value : ""
         }
     };
     localStorage.setItem('db_canvas_michael', JSON.stringify(datosASalvar));
@@ -1026,7 +1027,8 @@ function cargarProgreso() {
             'asignatura': data.formulario.asignatura,
             'zoom': data.formulario.zoom,
             'escuela': data.formulario.escuela,
-            'inicio-bimestre': data.formulario.inicio // Verifica que este ID sea igual al del HTML
+            'inicio-bimestre': data.formulario.inicio, // Verifica que este ID sea igual al del HTML,
+            'zoom-pin': data.formulario.zoomPin
         };
 
         for (const [id, valor] of Object.entries(campos)) {
@@ -1113,7 +1115,8 @@ function generarCorreoDocente() {
     const docente = document.getElementById('docente-nombre').value || "[Nombre del docente]";
     const asig = document.getElementById('asignatura').value || "[Nombre de asignatura]";
     const zoom = document.getElementById('zoom').value || "[enlace zoom]";
-    
+    const zoomPin = document.getElementById('zoom-pin').value || "[PIN de anfitrión]"; // <-- NUEVO
+
     // Generación de la tabla de clases (Secuencia Didáctica)
     let tablaTexto = "";
     if (state.clases.length > 0) {
@@ -1142,20 +1145,34 @@ Por otra parte, le comparto la secuencia didáctica de la asignatura, con detall
 
 Nombre asignatura: ${asig}
 Enlace Zoom: ${zoom}
+PIN de anfitrión: ${zoomPin}
 
 ${tablaTexto}
 
-Si desea reunirse conmigo antes de iniciar sus clases para discutir cualquier inquietud o detalle, por favor, no dude en enviarme su disponibilidad de horario para agendar una reunión en un horario que nos acomode.
+Es importante considerar que el acceso a Zoom se realiza mediante el PIN de anfitrión.
 
-Finalmente, le dejo orientaciones con buenas prácticas y responsabilidades del docente:
+Cómo reclamar el rol de anfitrión en Zoom:
 
-1. Anuncios: Debe dar la bienvenida, además de dejar como mínimo 1 anuncio por semana, indicando los objetivos de aprendizaje del módulo y objetivo de estudio, informativos, PPT de clases, entre otros recursos como videos, PDF, enlaces, cuestionarios o ejercicios.
+1. Ingresar al enlace de Zoom o entrar a la reunión usando el ID de reunión.
+2. Una vez dentro de la sala, ubicar su nombre en la lista de participantes.
+3. En el menú de opciones de su usuario (los tres puntos), seleccionar “Reclamar rol de anfitrión”.
+4. Ingresar el PIN de anfitrión proporcionado.
+5. Al validar el PIN, obtendrá el rol de anfitrión y podrá iniciar y gestionar la clase.
 
-2. Evitar suspender la clase: Si por un motivo de fuerza mayor debe suspender, es el o la docente quien deja un anuncio en Canvas en caso de suspensión. Además, debe contactar al tutor de la asignatura para reprogramar la clase dentro de la misma semana.
+Si tiene dudas con este proceso, puede comunicarse con el equipo de Training:
 
-3. Las clases deben considerar actividades prácticas: Recordar que, desde Training, se solicitan clases que involucren actividades prácticas y el uso de plataformas que motiven la participación de los estudiantes, como Educaplay, Wooclap, Nolej, Quizizz, Wordwall, Blooket, ManusAI, entre otras.
+Correo: training@ipp.cl  
+WhatsApp: +56 9 8513 2178
 
-4. Con respecto a las evaluaciones de los estudiantes: El docente debe tener conocimiento completo de todos los trabajos, informes y evaluaciones disponibles en la plataforma, así como de las fechas de entrega. Aunque el tutor brinda orientaciones a través de correo, anuncios o chat, los estudiantes suelen realizar consultas durante las clases, por lo que es fundamental que el docente esté plenamente informado para resolver dudas y así mejorar la experiencia de aprendizaje.
+Finalmente, le dejo algunas recomendaciones:
+
+1. Anuncios: Publicar bienvenida y al menos 1 anuncio semanal con objetivos del módulo y recursos de apoyo (PPT, videos, PDF, enlaces, ejercicios, etc.).
+
+2. Suspensión de clases: Evitar suspender. Si ocurre por fuerza mayor, el docente debe informar en Canvas y coordinar con el tutor la reprogramación dentro de la misma semana.
+
+3. Clases prácticas: Se recomienda incorporar actividades prácticas y herramientas interactivas que fomenten la participación de los estudiantes.
+
+4. Evaluaciones: El docente debe conocer todas las evaluaciones, trabajos y fechas de entrega para poder resolver dudas durante las clases.
 
 Cualquier comentario o duda, me puede indicar a través de esta vía.
 

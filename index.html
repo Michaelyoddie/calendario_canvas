@@ -504,9 +504,6 @@
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════
-     HEADER
-════════════════════════════════════════════════════════ -->
 <header>
   <div class="logo">
     <div class="logo-dot"></div>
@@ -561,6 +558,10 @@
         <input type="text" id="zoom" placeholder="https://zoom.us/j/..." />
       </div>
       <div class="field-group">
+        <label>PIN Anfitrión (Solo correo)</label>
+        <input type="text" id="zoom-pin" placeholder="Ej: 123456" />
+      </div>
+      <div class="field-group">
         <label>Nombre del Docente (para correo)</label>
         <input type="text" id="docente-nombre" placeholder="Ej: Juan Pérez" />
       </div>
@@ -608,11 +609,10 @@
           <option>4 MasterClass + 4 clases de repaso</option>
         </select>
       </div>
-      </div>
       <button class="btn btn-primary btn-full" id="btn-generar-clases">⚡ Generar calendario</button>
       <button class="btn btn-danger btn-full" id="btn-limpiar-clases" style="margin-top: 10px; display: none;">🗑 Limpiar clases</button>
       <div class="divider"></div>
-      <div id="lista-clases"><div class="empty-state">El calendario aparecerá aquí.</div></div>
+      <div id="lista-clases"><div class="empty-state">El calendario aparecerá aquí luego de generarlo.</div></div>
     </div>
 
     <div class="section" id="tab-evalua">
@@ -655,7 +655,9 @@
       <div id="lista-grab"></div>
     </div>
 
-  </div> <div id="resizer"></div>
+  </div>
+
+  <div id="resizer"></div>
 
   <div class="panel-right" id="panel-derecho-main">
     <div class="preview-header">
