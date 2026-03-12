@@ -615,3 +615,566 @@ function generarHTML({
 // =========================================================
 // No se usa import/export para máxima compatibilidad con
 // GitHub Pages sin bundler. Todo queda en window global.
+
+// =========================================================
+// LÓGICA DE INTERFAZ (extraída de index.html)
+// =========================================================
+
+function confirmarLimpiezaTotal() {
+        if(confirm("¿Seguro? Se borrarán todos los datos guardados para empezar desde cero.")) {
+            localStorage.removeItem('db_canvas_michael');
+            location.reload();
+        }
+    }
+
+// ═══════════════════════════════════════════════════════
+// ESTADO GLOBAL
+// ═══════════════════════════════════════════════════════
+const state = {
+  clases: [],   
+  entregas: [],   
+  tutorias: [],   
+  grabaciones: [],   
+  modo: "clases"
+};
+
+// ═══════════════════════════════════════════════════════
+// TABS IZQUIERDOS
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("tab-" + tab.dataset.tab).classList.add("active");
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// TABS PREVIEW
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll(".preview-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".preview-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    const target = tab.dataset.preview;
+    document.getElementById("preview-rendered").classList.toggle("active", target === "rendered");
+    document.getElementById("preview-code").classList.toggle("active", target === "code");
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// MODO CLASES / SIN CLASES
+// ═══════════════════════════════════════════════════════
+document.querySelectorAll(".modo-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".modo-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    state.modo = btn.dataset.modo;
+    actualizarPreview();
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// TOGGLE TUTORÍAS
+// ═══════════════════════════════════════════════════════
+document.getElementById("toggle-tutorias").addEventListener("change", function () {
+  const bloque = document.getElementById("bloque-tutorias");
+  bloque.style.display = this.checked ? "flex" : "none";
+  if (!this.checked) { state.tutorias = []; actualizarPreview(); }
+});
+
+// ═══════════════════════════════════════════════════════
+// LIVE UPDATE en campos de texto
+// ═══════════════════════════════════════════════════════
+["tutor","asignatura","zoom","escuela"].forEach(id => {
+  document.getElementById(id).addEventListener("input", actualizarPreview);
+  document.getElementById(id).addEventListener("change", actualizarPreview);
+});
+
+// ═══════════════════════════════════════════════════════
+// GENERAR CALENDARIO DE CLASES
+// ═══════════════════════════════════════════════════════
+document.getElementById("btn-generar-clases").addEventListener("click", () => {
+  const inicio = document.getElementById("inicio-bimestre").value;
+  if (!inicio) { showToast("⚠ Ingresa la fecha de inicio del bimestre", true); return; }
+
+  // convertir de YYYY-MM-DD a DD/MM/YYYY
+  const [y, m, d] = inicio.split("-");
+  const inicioDDMMYYYY = `${d}/${m}/${y}`;
+
+  try {
+    state.clases = generarClasesDesdeSecuencia(
+      document.getElementById("asignatura").value,
+      inicioDDMMYYYY,
+      document.getElementById("dia-clase").value,
+      document.getElementById("hora-clase").value,
+      document.getElementById("secuencia").value
+    );
+    renderListaClases();
+    actualizarBadge("clases", state.clases.length);
+    actualizarPreview();
+    showToast("✓ Calendario generado");
+  } catch (e) {
+    showToast("Error: " + e.message, true);
+  }
+});
+
+const btnLimpiarClases = document.getElementById("btn-limpiar-clases");
+if (btnLimpiarClases) {
+  btnLimpiarClases.addEventListener("click", () => {
+    state.clases = [];
+    renderListaClases();
+    actualizarBadge("clases", 0);
+    actualizarPreview();
+  });
+}
+
+function renderListaClases() {
+  const cont = document.getElementById("lista-clases");
+  const btn  = document.getElementById("btn-limpiar-clases");
+
+  if (!cont) return; // Seguridad: si no existe el contenedor, no hace nada
+
+  if (state.clases.length === 0) {
+    cont.innerHTML = `<div class="empty-state">El calendario aparecerá aquí luego de generarlo.</div>`;
+    if (btn) btn.style.display = "none"; 
+    return;
+  }
+  
+  if (btn) btn.style.display = "block"; // Solo cambia el estilo si el botón existe
+
+  cont.innerHTML = state.clases.map((c, i) => `
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-card-title">${c.tipo_clase}</div>
+        <div class="item-card-sub">
+          ${c.fecha} &nbsp;·&nbsp; ${c.hora}
+          ${c.observacion ? `<span class="obs-badge">⚠ Reprogramada</span>` : ""}
+        </div>
+      </div>
+      <span class="item-card-tag">Sem ${c.semana}</span>
+      <button class="item-remove" title="Eliminar" onclick="eliminarClase(${i})">×</button>
+    </div>
+  `).join("");
+}
+
+
+function eliminarClase(i) {
+  state.clases.splice(i, 1);
+  renderListaClases();
+  actualizarBadge("clases", state.clases.length);
+  actualizarPreview();
+}
+
+// ═══════════════════════════════════════════════════════
+// EVALUACIONES - AGREGAR
+// ═══════════════════════════════════════════════════════
+document.getElementById("btn-add-evalua").addEventListener("click", () => {
+  const nombreInput = document.getElementById("evalua-nombre");
+  const fechaInput = document.getElementById("evalua-fecha");
+  
+  if (!nombreInput || !fechaInput || !fechaInput.value) { 
+    showToast("⚠ Completa nombre y fecha", true); 
+    return; 
+  }
+
+  const [y, m, d] = fechaInput.value.split("-");
+  state.entregas.push({ nombre: nombreInput.value.trim(), fecha: `${d}/${m}/${y}` });
+
+  // Actualizamos el contador para la siguiente API
+  const siguienteNumero = state.entregas.length + 1;
+  nombreInput.value = "API / PRUEBA " + siguienteNumero;
+  
+  fechaInput.value = ""; // Limpiamos la fecha
+
+  renderListaEvalua();
+  actualizarBadge("evalua", state.entregas.length);
+  actualizarPreview();
+  showToast("✓ Evaluación agregada");
+  
+  if (typeof guardarProgreso === 'function') guardarProgreso();
+});
+
+function renderListaEvalua() {
+  const cont = document.getElementById("lista-evalua");
+  if (state.entregas.length === 0) {
+    cont.innerHTML = `<div class="empty-state">Aún no hay evaluaciones agregadas.</div>`;
+    return;
+  }
+  cont.innerHTML = state.entregas.map((e, i) => `
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-card-title">${e.nombre}</div>
+        <div class="item-card-sub">${e.fecha}</div>
+      </div>
+      <button class="item-remove" title="Eliminar" onclick="eliminarEvalua(${i})">×</button>
+    </div>
+  `).join("");
+}
+
+function eliminarEvalua(i) {
+  state.entregas.splice(i, 1);
+  
+  renderListaEvalua();
+  actualizarBadge("evalua", state.entregas.length);
+  actualizarPreview();
+  
+  // --- CORRECCIÓN: Reajuste del contador tras eliminar ---
+  const proximoNumero = state.entregas.length + 1;
+  document.getElementById("evalua-nombre").value = "API / PRUEBA " + proximoNumero;
+
+  if (typeof guardarProgreso === 'function') guardarProgreso();
+}
+
+// ═══════════════════════════════════════════════════════
+// TUTORÍAS
+// ═══════════════════════════════════════════════════════
+let semanaCounterTut = 1;
+
+document.getElementById("btn-add-tut").addEventListener("click", () => {
+  const fechaIn = document.getElementById("tut-fecha");
+  const horaIn = document.getElementById("tut-hora");
+  const cantIn = document.getElementById("tut-cantidad");
+
+  if (!fechaIn || !fechaIn.value) { 
+    showToast("⚠ Selecciona la fecha de inicio", true); 
+    return; 
+  }
+
+  state.tutorias = []; 
+  let fechaActual = new Date(fechaIn.value + "T00:00:00");
+
+  for (let i = 1; i <= (parseInt(cantIn.value) || 4); i++) {
+    state.tutorias.push({
+      semana: i,
+      fecha: formatearFecha(fechaActual),
+      hora: horaIn.value,
+      observacion: ""
+    });
+    fechaActual.setDate(fechaActual.getDate() + 7);
+  }
+
+  renderListaTut();
+  actualizarPreview();
+  showToast("✓ Tutorías generadas");
+  if (typeof guardarProgreso === 'function') guardarProgreso();
+});
+
+function renderListaTut() {
+  const cont = document.getElementById("lista-tut");
+  if (state.tutorias.length === 0) {
+    cont.innerHTML = `<div class="empty-state">Aún no hay tutorías.</div>`;
+    return;
+  }
+  cont.innerHTML = state.tutorias.map((t, i) => `
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-card-title">${t.fecha} &nbsp;·&nbsp; ${t.hora}</div>
+        <div class="item-card-sub">${t.observacion || "Sin observación"}</div>
+      </div>
+      <span class="item-card-tag">Sem ${t.semana}</span>
+      <button class="item-remove" onclick="eliminarTut(${i})">×</button>
+    </div>
+  `).join("");
+}
+
+function eliminarTut(i) {
+  state.tutorias.splice(i, 1);
+  // Renumerar semanas
+  state.tutorias.forEach((t, idx) => t.semana = idx + 1);
+  semanaCounterTut = state.tutorias.length + 1;
+  renderListaTut();
+  actualizarPreview();
+}
+
+// ═══════════════════════════════════════════════════════
+// GRABACIONES
+// ═══════════════════════════════════════════════════════
+document.getElementById("btn-add-grab").addEventListener("click", () => {
+  const nombre = document.getElementById("grab-nombre").value.trim();
+  const url    = document.getElementById("grab-url").value.trim();
+  if (!nombre) { showToast("⚠ Ingresa el nombre de la clase", true); return; }
+
+  state.grabaciones.push({ nombre, url });
+  document.getElementById("grab-nombre").value = "";
+  document.getElementById("grab-url").value = "";
+  renderListaGrab();
+  actualizarPreview();
+  showToast("✓ Grabación agregada");
+});
+
+function renderListaGrab() {
+  const cont = document.getElementById("lista-grab");
+  if (state.grabaciones.length === 0) {
+    cont.innerHTML = `<div class="empty-state">Aún no hay grabaciones.</div>`;
+    return;
+  }
+  cont.innerHTML = state.grabaciones.map((g, i) => `
+    <div class="item-card">
+      <div class="item-card-body">
+        <div class="item-card-title">${g.nombre}</div>
+        <div class="item-card-sub">${g.url || "Sin enlace aún"}</div>
+      </div>
+      <button class="item-remove" onclick="eliminarGrab(${i})">×</button>
+    </div>
+  `).join("");
+}
+
+function eliminarGrab(i) {
+  state.grabaciones.splice(i, 1);
+  renderListaGrab();
+  actualizarPreview();
+}
+
+// ═══════════════════════════════════════════════════════
+// PREVIEW EN VIVO
+// ═══════════════════════════════════════════════════════
+function actualizarPreview() {
+  const html = generarHTML({
+    asignatura:  document.getElementById("asignatura").value,
+    tutor:       document.getElementById("tutor").value,
+    zoom:        document.getElementById("zoom").value,
+    modo:        state.modo,
+    clases:      state.clases,
+    entregas:    state.entregas,
+    tutorias:    state.tutorias,
+    grabaciones: state.grabaciones,
+    escuela:     document.getElementById("escuela").value,
+  });
+
+  // iframe preview via srcdoc (compatible con archivos locales)
+  const frame = document.getElementById("preview-frame");
+  frame.srcdoc = `<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <style>body{font-family:Arial,sans-serif;padding:20px;font-size:14px;color:#222;}</style>
+  </head><body>${html}</body></html>`;
+
+  // código
+  document.getElementById("code-area").value = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// COPIAR Y DESCARGAR
+// ═══════════════════════════════════════════════════════
+
+
+document.getElementById("btn-descargar").addEventListener("click", () => {
+  const html = document.getElementById("code-area").value;
+  const asig = document.getElementById("asignatura").value || "anuncio";
+  const blob = new Blob([html], { type: "text/html" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `anuncio-${asig.toLowerCase().replace(/\s+/g, "-")}.html`;
+  a.click();
+  showToast("✓ Archivo descargado");
+});
+
+// ═══════════════════════════════════════════════════════
+// UTILIDADES UI
+// ═══════════════════════════════════════════════════════
+function actualizarBadge(tab, count) {
+  const badge = document.getElementById("badge-" + tab);
+  badge.textContent = count;
+  badge.classList.toggle("visible", count > 0);
+}
+
+let toastTimer;
+function showToast(msg, isError = false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.background = isError ? "var(--danger)" : "var(--accent2)";
+  t.style.color = isError ? "#fff" : "#0f1117";
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
+}
+
+// Preview inicial vacío
+actualizarPreview();
+
+
+// --- MEJORA: PERSISTENCIA DE DATOS (LOCALSTORAGE) ---
+
+function guardarProgreso() {
+    const datosASalvar = {
+        listas: state,
+        formulario: {
+            tutor: document.getElementById('tutor').value,
+            asignatura: document.getElementById('asignatura').value,
+            zoom: document.getElementById('zoom').value,
+            escuela: document.getElementById('escuela').value,
+            inicio: document.getElementById('inicio-bimestre').value
+        }
+    };
+    localStorage.setItem('db_canvas_michael', JSON.stringify(datosASalvar));
+    // Llamamos a tu función de preview original para que el iframe se actualice
+    if (typeof actualizarPreview === 'function') actualizarPreview();
+}
+
+function cargarProgreso() {
+    const memoria = localStorage.getItem('db_canvas_michael');
+    const data = memoria ? JSON.parse(memoria) : null;
+
+    if (data) {
+        // Restauramos el estado
+        Object.assign(state, data.listas);
+
+        // Restauramos los valores SOLO si el elemento existe en el HTML
+        const campos = {
+            'tutor': data.formulario.tutor,
+            'asignatura': data.formulario.asignatura,
+            'zoom': data.formulario.zoom,
+            'escuela': data.formulario.escuela,
+            'inicio-bimestre': data.formulario.inicio // Verifica que este ID sea igual al del HTML
+        };
+
+        for (const [id, valor] of Object.entries(campos)) {
+            const el = document.getElementById(id);
+            if (el && valor !== undefined) el.value = valor;
+        }
+
+        // Ejecutamos renders
+        if (typeof renderListaClases === 'function') renderListaClases(); 
+        if (typeof renderListaEvalua === 'function') renderListaEvalua();
+        if (typeof renderListaTut === 'function') renderListaTut(); 
+        if (typeof renderListaGrab === 'function') renderListaGrab();
+        if (typeof actualizarPreview === 'function') actualizarPreview();
+    }
+
+    // Manejo del nombre de la API (con verificación de seguridad)
+    const elEvalua = document.getElementById('evalua-nombre');
+    if (elEvalua) {
+        const proximoNumero = (state.entregas ? state.entregas.length : 0) + 1;
+        elEvalua.value = "API / PRUEBA " + proximoNumero;
+    }
+}
+
+// Escuchador global: cada vez que escribes algo en un input, se guarda
+document.addEventListener('input', (e) => {
+    if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
+        guardarProgreso();
+    }
+});
+
+// Al cargar la ventana, recuperamos la información
+window.addEventListener('load', cargarProgreso);
+
+// --- LÓGICA DEL PANEL ARRASTRABLE (RESIZER) ---
+const resizer = document.getElementById('resizer');
+const panelIzquierdo = document.querySelector('.panel-left');
+const appContainer = document.querySelector('.app');
+
+resizer.addEventListener('mousedown', (e) => {
+    document.addEventListener('mousemove', resize);
+    document.addEventListener('mouseup', stopResize);
+    resizer.style.background = 'var(--accent)';
+});
+
+function resize(e) {
+    const newWidth = e.clientX;
+    const appContainer = document.querySelector('.app');
+    // Forzamos el cambio de columnas explícitamente
+    if (newWidth > 300 && newWidth < 900) { 
+        appContainer.style.display = "grid"; 
+        appContainer.style.gridTemplateColumns = newWidth + "px 6px 1fr";
+    }
+}
+
+function stopResize() {
+    document.removeEventListener('mousemove', resize);
+    resizer.style.background = 'var(--border)';
+}
+
+// --- FUNCIONES DE INTERFAZ DERECHA (VISTAS Y COPIADO) ---
+
+function cambiarVistaPreview(tipo) {
+    const vistaAnuncio = document.getElementById('preview-anuncio-container');
+    const vistaCorreo = document.getElementById('preview-correo-container');
+    const tabAnuncio = document.getElementById('tab-ver-anuncio');
+    const tabCorreo = document.getElementById('tab-ver-correo');
+
+    if (tipo === 'anuncio') {
+        vistaAnuncio.style.display = 'block';
+        vistaCorreo.style.display = 'none';
+        tabAnuncio.style.color = 'var(--accent)';
+        tabCorreo.style.color = 'var(--text-muted)';
+    } else {
+        generarCorreoDocente(); // Se asegura de redactar el correo con los datos actuales
+        vistaAnuncio.style.display = 'none';
+        vistaCorreo.style.display = 'block';
+        tabAnuncio.style.color = 'var(--text-muted)';
+        tabCorreo.style.color = 'var(--accent)';
+    }
+}
+
+function generarCorreoDocente() {
+    const tutor = document.getElementById('tutor').value || "[Tu Nombre]";
+    const docente = document.getElementById('docente-nombre').value || "[Nombre del docente]";
+    const asig = document.getElementById('asignatura').value || "[Nombre de asignatura]";
+    const zoom = document.getElementById('zoom').value || "[enlace zoom]";
+    
+    // Generación de la tabla de clases (Secuencia Didáctica)
+    let tablaTexto = "";
+    if (state.clases.length > 0) {
+        tablaTexto = "--------------------------------------------------------------------------\n";
+        tablaTexto += "SEM | FECHA      | DETALLE DE TEMAS / CLASE  | ENTREGAS\n";
+        tablaTexto += "--------------------------------------------------------------------------\n";
+
+        state.clases.forEach(c => {
+            const entregaSemana = state.entregas
+                .filter(e => e.fecha === c.fecha)
+                .map(e => e.nombre)
+                .join(", ") || "-";
+            
+            tablaTexto += `${c.semana.toString().padEnd(3)} | ${c.fecha.padEnd(10)} | ${c.tipo_clase.padEnd(25)} | ${entregaSemana}\n`;
+        });
+        tablaTexto += "--------------------------------------------------------------------------";
+    } else {
+        tablaTexto = "  (Aún no se han generado clases)";
+    }
+
+    const cuerpo = `Hola ${docente},
+
+Esperando que se encuentre bien, le escribo ya que trabajaremos en conjunto en la asignatura de ${asig}, en la cual soy tutor para este bimestre. Le doy la más cordial bienvenida.
+
+Por otra parte, le comparto la secuencia didáctica de la asignatura, con detalles de los temas a acordar en cada clase:
+
+Nombre asignatura: ${asig}
+Enlace Zoom: ${zoom}
+
+${tablaTexto}
+
+Si desea reunirse conmigo antes de iniciar sus clases para discutir cualquier inquietud o detalle, por favor, no dude en enviarme su disponibilidad de horario para agendar una reunión en un horario que nos acomode.
+
+Finalmente, le dejo orientaciones con buenas prácticas y responsabilidades del docente:
+
+1. Anuncios: Debe dar la bienvenida, además de dejar como mínimo 1 anuncio por semana, indicando los objetivos de aprendizaje del módulo y objetivo de estudio, informativos, PPT de clases, entre otros recursos como videos, PDF, enlaces, cuestionarios o ejercicios.
+
+2. Evitar suspender la clase: Si por un motivo de fuerza mayor debe suspender, es el o la docente quien deja un anuncio en Canvas en caso de suspensión. Además, debe contactar al tutor de la asignatura para reprogramar la clase dentro de la misma semana.
+
+3. Las clases deben considerar actividades prácticas: Recordar que, desde Training, se solicitan clases que involucren actividades prácticas y el uso de plataformas que motiven la participación de los estudiantes, como Educaplay, Wooclap, Nolej, Quizizz, Wordwall, Blooket, ManusAI, entre otras.
+
+4. Con respecto a las evaluaciones de los estudiantes: El docente debe tener conocimiento completo de todos los trabajos, informes y evaluaciones disponibles en la plataforma, así como de las fechas de entrega. Aunque el tutor brinda orientaciones a través de correo, anuncios o chat, los estudiantes suelen realizar consultas durante las clases, por lo que es fundamental que el docente esté plenamente informado para resolver dudas y así mejorar la experiencia de aprendizaje.
+
+Cualquier comentario o duda, me puede indicar a través de esta vía.
+
+Saludos,
+${tutor}
+Tutor Académico IPP`;
+
+    document.getElementById('correo-cuerpo').value = cuerpo;
+}
+
+function copiarContenidoActual() {
+    const esCorreo = document.getElementById('preview-correo-container').style.display === 'block';
+    if (esCorreo) {
+        const texto = document.getElementById('correo-cuerpo').value;
+        if(!texto) { showToast("⚠ Genera el correo primero", true); return; }
+        navigator.clipboard.writeText(texto).then(() => showToast("✓ Correo copiado"));
+    } else {
+        // Buscamos el contenido del textarea donde guardas el HTML del anuncio
+        const html = document.getElementById('code-area').value;
+        navigator.clipboard.writeText(html).then(() => showToast("✓ HTML del Anuncio copiado"));
+    }
+}
