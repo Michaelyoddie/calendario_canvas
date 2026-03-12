@@ -500,6 +500,8 @@
       .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
       .panel-left { height: auto; max-height: 50vh; }
     }
+
+    
   </style>
 </head>
 <body>
@@ -638,10 +640,16 @@
       </div>
       <div id="bloque-tutorias" style="display:none; flex-direction:column; gap:.75rem;">
         <div class="row-2">
-          <div class="field-group"><label>1era tutoría</label><input type="date" id="tut-fecha" /></div>
-          <div class="field-group"><label>Hora</label><select id="tut-hora"><option>18:00</option></select></div>
+          <div class="field-group"><label>Tutoría</label><input type="date" id="tut-fecha" /></div>
+          <div class="field-group">
+            <label>Hora</label>
+            <select id="tut-hora">
+              <option>17:00</option>
+              <option>18:00</option>
+            </select>
+          </div>
         </div>
-        <div class="field-group"><label>Sesiones</label><input type="number" id="tut-cantidad" value="4" /></div>
+        <div class="field-group"><label>Sesiones</label><input type="text" id="tut-cantidad" value="4" /></div>
         <button class="btn btn-secondary btn-full" id="btn-add-tut">+ Generar serie</button>
         <div id="lista-tut"></div>
       </div>
