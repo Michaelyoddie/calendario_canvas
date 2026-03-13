@@ -1233,7 +1233,7 @@ function generarCorreoDocente() {
     <li style="margin-bottom: 8px;">Ingresar el PIN (${zoomPin}) y confirmar.</li>
   </ol>
 
-  <p>Es fundamental que domine este procedimiento antes de su primera sesión. <strong>Si nunca ha realizado este proceso o tiene dudas, <u>debe contactarse a la brevedad</u> con el equipo de Training</strong>, quienes son los encargados oficiales de brindarle la inducción y capacitación en esta herramienta:</p>
+  <p>Es fundamental que domine este procedimiento antes de su primera sesión. <strong>Si nunca ha realizado este proceso o tiene dudas, <u>debe contactarse a la brevedad</u> con el equipo de Training</strong>, quienes son los encargados de brindarle la inducción y capacitación en esta herramienta:</p>
   
   <div style="margin-left: 10px; margin-top: 6px; margin-bottom: 20px;">
     <strong>Correo:</strong> training@ipp.cl<br>
@@ -1246,7 +1246,7 @@ function generarCorreoDocente() {
     <li style="margin-bottom: 12px;"><strong>Clases prácticas:</strong> Se recomienda incorporar actividades prácticas y herramientas interactivas que fomenten la participación de los estudiantes.</li>
     <li style="margin-bottom: 12px;"><strong>Evaluaciones:</strong> El docente debe conocer todas las evaluaciones, trabajos y fechas de entrega para poder resolver dudas durante las clases.</li>
   </ol><br>
-  Cualquier comentario o duda, me puede indicar a través de esta vía.<br><br>
+  Cualquier comentario o duda académica, me puede indicar a través de esta vía.<br><br>
   Saludos,<br><br>
   <strong>${tutor}</strong><br>
   Tutor Académico IPP
