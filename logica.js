@@ -43,55 +43,55 @@ const DIAS_SEMANA = {
 
 const SECUENCIAS = {
   "4 clases sincrónicas": {
-    1: "Clase Módulo 1",
-    2: "Clase Módulo 2",
-    4: "Clase Módulo 3",
-    5: "Clase Módulo 4",
+    2: "Clase Módulo 1",
+    3: "Clase Módulo 2",
+    5: "Clase Módulo 3",
+    6: "Clase Módulo 4",
   },
   "4 clases sincrónicas + 2 clases de repaso": {
-    1: "Clase Módulo 1",
-    2: "Clase Módulo 2",
-    3: "Clase Repaso API 1-API 2",
-    4: "Clase Módulo 3",
-    5: "Clase Módulo 4",
-    6: "Clase Repaso API 3-API 4",
+    2: "Clase Módulo 1",
+    3: "Clase Módulo 2",
+    4: "Clase Repaso API 1-API 2",
+    5: "Clase Módulo 3",
+    6: "Clase Módulo 4",
+    7: "Clase Repaso API 3-API 4",
   },
   "4 clases sincrónicas + 1 ensayo examen": {
-    1: "Clase Módulo 1",
-    2: "Clase Módulo 2",
-    4: "Clase Módulo 3",
-    5: "Clase Módulo 4",
-    7: "Ensayo Examen",
+    2: "Clase Módulo 1",
+    3: "Clase Módulo 2",
+    5: "Clase Módulo 3",
+    6: "Clase Módulo 4",
+    8: "Ensayo Examen",
   },
   "4 clases sincrónicas + 2 clases de repaso + 1 ensayo examen": {
-    1: "Clase Módulo 1",
-    2: "Clase Módulo 2",
-    3: "Clase Repaso API 1-API 2",
-    4: "Clase Módulo 3",
-    5: "Clase Módulo 4",
-    6: "Clase Repaso API 3-API 4",
-    7: "Ensayo Examen",
+    2: "Clase Módulo 1",
+    3: "Clase Módulo 2",
+    4: "Clase Repaso API 1-API 2",
+    5: "Clase Módulo 3",
+    6: "Clase Módulo 4",
+    7: "Clase Repaso API 3-API 4",
+    8: "Ensayo Examen",
   },
   "4 MasterClass": {
-    1: "MasterClass Módulo 1",
-    2: "MasterClass Módulo 2",
-    4: "MasterClass Módulo 3",
-    5: "MasterClass Módulo 4",
+    2: "MasterClass Módulo 1",
+    3: "MasterClass Módulo 2",
+    5: "MasterClass Módulo 3",
+    6: "MasterClass Módulo 4",
   },
   "4 MasterClass + 3 clases de repaso": {
-    1: "MasterClass Módulo 1",
-    2: "MasterClass Módulo 2 + Clase Repaso API 1",
-    3: "Clase Repaso API 2",
-    4: "MasterClass Módulo 3",
-    5: "MasterClass Módulo 4 + Clase Repaso API 3-API 4",
+    2: "MasterClass Módulo 1",
+    3: "MasterClass Módulo 2 + Clase Repaso API 1",
+    4: "Clase Repaso API 2",
+    5: "MasterClass Módulo 3",
+    6: "MasterClass Módulo 4 + Clase Repaso API 3-API 4",
   },
   "4 MasterClass + 4 clases de repaso": {
-    1: "MasterClass Módulo 1",
-    2: "MasterClass Módulo 2 + Clase Repaso API 1",
-    3: "Clase Repaso API 2",
-    4: "MasterClass Módulo 3",
-    5: "MasterClass Módulo 4 + Clase Repaso API 3",
-    6: "Clase Repaso API 4",
+    2: "MasterClass Módulo 1",
+    3: "MasterClass Módulo 2 + Clase Repaso API 1",
+    4: "Clase Repaso API 2",
+    5: "MasterClass Módulo 3",
+    6: "MasterClass Módulo 4 + Clase Repaso API 3",
+    7: "Clase Repaso API 4",
   },
 };
 
@@ -223,12 +223,11 @@ function fechaAKey(fecha) {
 
 /** Equivalente a calcular_inicio_semana_1 en Python */
 function calcularInicioSemana1(inicioBimestre) {
-  // weekday(): Python lunes=0. JS getDay(): domingo=0, lunes=1...
-  // Queremos el próximo lunes después del inicio
-  const diaSemanaJS = inicioBimestre.getDay(); // 0=dom,1=lun...
-  const diasHastaLunes = diaSemanaJS === 0 ? 1 : (8 - diaSemanaJS) % 7;
+  // Retorna el lunes de la semana actual que el usuario elige como "Inicio de Bimestre"
+  const diaSemanaJS = inicioBimestre.getDay();
+  const diasDesdeLunes = diaSemanaJS === 0 ? 6 : diaSemanaJS - 1;
   const result = new Date(inicioBimestre);
-  result.setDate(inicioBimestre.getDate() + diasHastaLunes);
+  result.setDate(inicioBimestre.getDate() - diasDesdeLunes);
   return result;
 }
 
@@ -622,12 +621,18 @@ function generarHTML({
 
 function confirmarLimpiezaTotal() {
         if(confirm("¿Seguro? Se borrarán todos los datos guardados para empezar desde cero.")) {
-            localStorage.removeItem('db_canvas_michael');
+            localStorage.removeItem('db_formulario'); localStorage.removeItem('db_listas');
             location.reload();
         }
     }
 
 // ═══════════════════════════════════════════════════════
+// UTILIDADES — toastTimer declarado aquí para evitar error de inicialización
+let toastTimer;
+
+// Flag para bloquear guardarProgreso mientras se restauran datos
+let _cargando = false;
+
 // ESTADO GLOBAL
 // ═══════════════════════════════════════════════════════
 const state = {
@@ -650,18 +655,9 @@ document.querySelectorAll(".tab").forEach(tab => {
   });
 });
 
-// ═══════════════════════════════════════════════════════
-// TABS PREVIEW
-// ═══════════════════════════════════════════════════════
-document.querySelectorAll(".preview-tab").forEach(tab => {
-  tab.addEventListener("click", () => {
-    document.querySelectorAll(".preview-tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    const target = tab.dataset.preview;
-    document.getElementById("preview-rendered").classList.toggle("active", target === "rendered");
-    document.getElementById("preview-code").classList.toggle("active", target === "code");
-  });
-});
+// TABS PREVIEW — listeners explícitos como respaldo al onclick del HTML
+document.getElementById('tab-ver-anuncio').addEventListener('click', () => cambiarVistaPreview('anuncio'));
+document.getElementById('tab-ver-correo').addEventListener('click', () => cambiarVistaPreview('correo'));
 
 // ═══════════════════════════════════════════════════════
 // MODO CLASES / SIN CLASES
@@ -768,32 +764,38 @@ function eliminarClase(i) {
 }
 
 // ═══════════════════════════════════════════════════════
-// EVALUACIONES - AGREGAR
+// EVALUACIONES - AUTO-GENERACIÓN DESDE FECHA API 1
+// Semanas fijas: API1=sem3, API2=sem4, API3=sem6, API4=sem7
+// Diferencias en semanas desde API1: +0, +1, +3, +4
 // ═══════════════════════════════════════════════════════
+const SEMANAS_API = [0, 1, 3, 4]; // offsets en semanas desde la fecha de API 1
+
 document.getElementById("btn-add-evalua").addEventListener("click", () => {
-  const nombreInput = document.getElementById("evalua-nombre");
   const fechaInput = document.getElementById("evalua-fecha");
-  
-  if (!nombreInput || !fechaInput || !fechaInput.value) { 
-    showToast("⚠ Completa nombre y fecha", true); 
-    return; 
+
+  if (!fechaInput || !fechaInput.value) {
+    showToast("⚠ Ingresa la fecha de entrega de la API 1", true);
+    return;
   }
 
-  const [y, m, d] = fechaInput.value.split("-");
-  state.entregas.push({ nombre: nombreInput.value.trim(), fecha: `${d}/${m}/${y}` });
+  // Calcular las 4 fechas automáticamente
+  const base = new Date(fechaInput.value + "T00:00:00");
+  state.entregas = SEMANAS_API.map((offsetSemanas, i) => {
+    const fecha = new Date(base);
+    fecha.setDate(base.getDate() + offsetSemanas * 7);
+    return {
+      nombre: `API / PRUEBA ${i + 1}`,
+      fecha: formatearFecha(fecha)
+    };
+  });
 
-  // Actualizamos el contador para la siguiente API
-  const siguienteNumero = state.entregas.length + 1;
-  nombreInput.value = "API / PRUEBA " + siguienteNumero;
-  
-  fechaInput.value = ""; // Limpiamos la fecha
+  fechaInput.value = "";
 
   renderListaEvalua();
   actualizarBadge("evalua", state.entregas.length);
   actualizarPreview();
-  showToast("✓ Evaluación agregada");
-  
-  if (typeof guardarProgreso === 'function') guardarProgreso();
+  showToast("✓ 4 evaluaciones generadas automáticamente");
+  guardarProgreso();
 });
 
 function renderListaEvalua() {
@@ -815,16 +817,10 @@ function renderListaEvalua() {
 
 function eliminarEvalua(i) {
   state.entregas.splice(i, 1);
-  
   renderListaEvalua();
   actualizarBadge("evalua", state.entregas.length);
   actualizarPreview();
-  
-  // --- CORRECCIÓN: Reajuste del contador tras eliminar ---
-  const proximoNumero = state.entregas.length + 1;
-  document.getElementById("evalua-nombre").value = "API / PRUEBA " + proximoNumero;
-
-  if (typeof guardarProgreso === 'function') guardarProgreso();
+  guardarProgreso();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -958,7 +954,6 @@ function actualizarPreview() {
 // COPIAR Y DESCARGAR
 // ═══════════════════════════════════════════════════════
 
-
 document.getElementById("btn-descargar").addEventListener("click", () => {
   const html = document.getElementById("code-area").value;
   const asig = document.getElementById("asignatura").value || "anuncio";
@@ -979,7 +974,6 @@ function actualizarBadge(tab, count) {
   badge.classList.toggle("visible", count > 0);
 }
 
-let toastTimer;
 function showToast(msg, isError = false) {
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -990,77 +984,102 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
 }
 
-// Preview inicial vacío
-actualizarPreview();
+// Preview inicial — se llama desde cargarProgreso al terminar
 
 
 // --- MEJORA: PERSISTENCIA DE DATOS (LOCALSTORAGE) ---
 
-function guardarProgreso() {
-    const datosASalvar = {
-        listas: state,
-        formulario: {
-            tutor: document.getElementById('tutor').value,
-            asignatura: document.getElementById('asignatura').value,
-            zoom: document.getElementById('zoom').value,
-            escuela: document.getElementById('escuela').value,
-            inicio: document.getElementById('inicio-bimestre').value,
-            zoomPin: document.getElementById('zoom-pin') ? document.getElementById('zoom-pin').value : ""
-        }
+function guardarFormulario() {
+    if (_cargando) return;
+    const formulario = {
+        tutor:         document.getElementById('tutor').value,
+        asignatura:    document.getElementById('asignatura').value,
+        zoom:          document.getElementById('zoom').value,
+        escuela:       document.getElementById('escuela').value,
+        inicio:        document.getElementById('inicio-bimestre').value,
+        zoomPin:       document.getElementById('zoom-pin') ? document.getElementById('zoom-pin').value : "",
+        docenteNombre: document.getElementById('docente-nombre') ? document.getElementById('docente-nombre').value : ""
     };
-    localStorage.setItem('db_canvas_michael', JSON.stringify(datosASalvar));
-    // Llamamos a tu función de preview original para que el iframe se actualice
-    if (typeof actualizarPreview === 'function') actualizarPreview();
+    localStorage.setItem('db_formulario', JSON.stringify(formulario));
+}
+
+function guardarListas() {
+    if (_cargando) return;
+    const listas = {
+        clases:      state.clases,
+        entregas:    state.entregas,
+        tutorias:    state.tutorias,
+        grabaciones: state.grabaciones,
+        modo:        state.modo
+    };
+    localStorage.setItem('db_listas', JSON.stringify(listas));
+}
+
+function guardarProgreso() {
+    guardarFormulario();
+    guardarListas();
 }
 
 function cargarProgreso() {
-    const memoria = localStorage.getItem('db_canvas_michael');
-    const data = memoria ? JSON.parse(memoria) : null;
+    _cargando = true;
 
-    if (data) {
-        // Restauramos el estado
-        Object.assign(state, data.listas);
+    // --- Restaurar LISTAS (clases, entregas, etc.) ---
+    const memListas = localStorage.getItem('db_listas');
+    if (memListas) {
+        const listas = JSON.parse(memListas);
+        state.clases      = listas.clases      || [];
+        state.entregas    = listas.entregas    || [];
+        state.tutorias    = listas.tutorias    || [];
+        state.grabaciones = listas.grabaciones || [];
+        state.modo        = listas.modo        || "clases";
+    }
 
-        // Restauramos los valores SOLO si el elemento existe en el HTML
+    // --- Restaurar FORMULARIO (tutor, asignatura, zoom, etc.) ---
+    const memForm = localStorage.getItem('db_formulario');
+    if (memForm) {
+        const f = JSON.parse(memForm);
         const campos = {
-            'tutor': data.formulario.tutor,
-            'asignatura': data.formulario.asignatura,
-            'zoom': data.formulario.zoom,
-            'escuela': data.formulario.escuela,
-            'inicio-bimestre': data.formulario.inicio, // Verifica que este ID sea igual al del HTML,
-            'zoom-pin': data.formulario.zoomPin
+            'tutor':           f.tutor,
+            'asignatura':      f.asignatura,
+            'zoom':            f.zoom,
+            'escuela':         f.escuela,
+            'inicio-bimestre': f.inicio,
+            'zoom-pin':        f.zoomPin,
+            'docente-nombre':  f.docenteNombre
         };
-
         for (const [id, valor] of Object.entries(campos)) {
             const el = document.getElementById(id);
-            if (el && valor !== undefined) el.value = valor;
+            if (el && valor !== undefined && valor !== null) el.value = valor;
         }
-
-        // Ejecutamos renders
-        if (typeof renderListaClases === 'function') renderListaClases(); 
-        if (typeof renderListaEvalua === 'function') renderListaEvalua();
-        if (typeof renderListaTut === 'function') renderListaTut(); 
-        if (typeof renderListaGrab === 'function') renderListaGrab();
-        if (typeof actualizarPreview === 'function') actualizarPreview();
     }
 
-    // Manejo del nombre de la API (con verificación de seguridad)
-    const elEvalua = document.getElementById('evalua-nombre');
-    if (elEvalua) {
-        const proximoNumero = (state.entregas ? state.entregas.length : 0) + 1;
-        elEvalua.value = "API / PRUEBA " + proximoNumero;
-    }
+    // Restaurar botón de modo clases
+    document.querySelectorAll('.modo-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.modo === state.modo);
+    });
+
+    // Renderizar listas y badges
+    renderListaClases();
+    renderListaEvalua();
+    renderListaTut();
+    renderListaGrab();
+    actualizarBadge("clases", state.clases.length);
+    actualizarBadge("evalua", state.entregas.length);
+
+    _cargando = false;
+    actualizarPreview();
 }
 
-// Escuchador global: cada vez que escribes algo en un input, se guarda
+// Escuchador global: guarda solo el formulario al escribir
+// Las listas se guardan explícitamente cuando se modifican
 document.addEventListener('input', (e) => {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
-        guardarProgreso();
+        guardarFormulario();
     }
 });
 
 // Al cargar la ventana, recuperamos la información
-window.addEventListener('load', cargarProgreso);
+document.addEventListener('DOMContentLoaded', cargarProgreso);
 
 // --- LÓGICA DEL PANEL ARRASTRABLE (RESIZER) ---
 const resizer = document.getElementById('resizer');
@@ -1097,101 +1116,193 @@ function cambiarVistaPreview(tipo) {
     const tabCorreo = document.getElementById('tab-ver-correo');
 
     if (tipo === 'anuncio') {
-        vistaAnuncio.style.display = 'block';
-        vistaCorreo.style.display = 'none';
-        tabAnuncio.style.color = 'var(--accent)';
-        tabCorreo.style.color = 'var(--text-muted)';
+        if (vistaAnuncio) vistaAnuncio.style.display = 'block';
+        if (vistaCorreo) vistaCorreo.style.display = 'none';
+        if (tabAnuncio) { tabAnuncio.classList.add('active'); tabAnuncio.style.color = 'var(--accent)'; }
+        if (tabCorreo) { tabCorreo.classList.remove('active'); tabCorreo.style.color = 'var(--text-muted)'; }
     } else {
-        generarCorreoDocente(); // Se asegura de redactar el correo con los datos actuales
-        vistaAnuncio.style.display = 'none';
-        vistaCorreo.style.display = 'block';
-        tabAnuncio.style.color = 'var(--text-muted)';
-        tabCorreo.style.color = 'var(--accent)';
+        generarCorreoDocente();
+        if (vistaAnuncio) vistaAnuncio.style.display = 'none';
+        if (vistaCorreo) vistaCorreo.style.display = 'block';
+        if (tabAnuncio) { tabAnuncio.classList.remove('active'); tabAnuncio.style.color = 'var(--text-muted)'; }
+        if (tabCorreo) { tabCorreo.classList.add('active'); tabCorreo.style.color = 'var(--accent)'; }
     }
 }
+window.cambiarVistaPreview = cambiarVistaPreview;
 
 function generarCorreoDocente() {
     const tutor = document.getElementById('tutor').value || "[Tu Nombre]";
     const docente = document.getElementById('docente-nombre').value || "[Nombre del docente]";
     const asig = document.getElementById('asignatura').value || "[Nombre de asignatura]";
     const zoom = document.getElementById('zoom').value || "[enlace zoom]";
-    const zoomPin = document.getElementById('zoom-pin').value || "[PIN de anfitrión]"; // <-- NUEVO
+    
+    const elPin = document.getElementById('zoom-pin');
+    const zoomPin = elPin && elPin.value ? elPin.value : "[PIN de anfitrión]";
 
-    // Generación de la tabla de clases (Secuencia Didáctica)
-    let tablaTexto = "";
-    if (state.clases.length > 0) {
-        tablaTexto = "--------------------------------------------------------------------------\n";
-        tablaTexto += "SEM | FECHA      | DETALLE DE TEMAS / CLASE  | ENTREGAS\n";
-        tablaTexto += "--------------------------------------------------------------------------\n";
+    let tablaHtml = `
+<table style="border-collapse: collapse; border: 1px solid #c0c0c0; font-family: Calibri, sans-serif; font-size: 11pt; margin-top: 15px; margin-bottom: 15px; width: 100%;">
+  <thead>
+    <tr style="background-color: #f2f2f2;">
+      <th style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: center; white-space: nowrap;">Semana</th>
+      <th style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: center; white-space: nowrap;">Día</th>
+      <th style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: left;">Tipo de Clase</th>
+      <th style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: center; white-space: nowrap;">Hora</th>
+      <th style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: left;">Entrega (API y Fecha)</th>
+    </tr>
+  </thead>
+  <tbody>
+`;
 
-        state.clases.forEach(c => {
-            const entregaSemana = state.entregas
-                .filter(e => e.fecha === c.fecha)
-                .map(e => e.nombre)
-                .join(", ") || "-";
-            
-            tablaTexto += `${c.semana.toString().padEnd(3)} | ${c.fecha.padEnd(10)} | ${c.tipo_clase.padEnd(25)} | ${entregaSemana}\n`;
+    if (state.clases.length > 0 || state.entregas.length > 0) {
+        const semanasFijasEntregas = [3, 4, 6, 7];
+        const entregasConSemana = state.entregas.map((e, index) => {
+            const semanaAsignada = index < semanasFijasEntregas.length ? semanasFijasEntregas[index] : 8;
+            return { ...e, semanaCalculada: semanaAsignada };
         });
-        tablaTexto += "--------------------------------------------------------------------------";
+
+        const semanasClases = state.clases.map(c => c.semana);
+        const semanasEntregas = entregasConSemana.map(e => e.semanaCalculada);
+        const semanasUnicas = [...new Set([...semanasClases, ...semanasEntregas])].sort((a, b) => a - b);
+
+        semanasUnicas.forEach(semana => {
+            const clase = state.clases.find(c => c.semana === semana);
+            const entregasSemana = entregasConSemana.filter(e => e.semanaCalculada === semana);
+            
+            let fechaStr = "-";
+            let tipoStr = "-";
+            let horaStr = "-";
+
+            if (clase) {
+                fechaStr = clase.fecha;
+                tipoStr = clase.tipo_clase;
+                horaStr = clase.hora;
+            }
+
+            let entregaStr = "-";
+            if (entregasSemana.length > 0) {
+                entregaStr = entregasSemana.map(e => `<strong>${e.nombre}</strong><br><span style="font-size:10pt; color:#444;">Vence: ${e.fecha}</span>`).join("<br><br>");
+            }
+
+            tablaHtml += `
+    <tr>
+      <td style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: center;">${semana}</td>
+      <td style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: center;">${fechaStr}</td>
+      <td style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: left;">${tipoStr}</td>
+      <td style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: center;">${horaStr}</td>
+      <td style="border: 1px solid #c0c0c0; padding: 8px 15px; text-align: left;">${entregaStr}</td>
+    </tr>`;
+        });
     } else {
-        tablaTexto = "  (Aún no se han generado clases)";
+        tablaHtml += `
+    <tr>
+      <td colspan="5" style="border: 1px solid #c0c0c0; padding: 15px; text-align: center; font-style: italic; color: #7b86ab; background-color: #fafafa;">
+        (Aún no se han generado clases)
+      </td>
+    </tr>`;
     }
 
-    const cuerpo = `Hola ${docente},
+    tablaHtml += `
+  </tbody>
+</table>`;
 
-Esperando que se encuentre bien, le escribo ya que trabajaremos en conjunto en la asignatura de ${asig}, en la cual soy tutor para este bimestre. Le doy la más cordial bienvenida.
+    const cuerpo = `
+<div style="font-family: Calibri, sans-serif; font-size: 11pt; color: #222;">
+  Hola ${docente},<br><br>
+  Esperando que se encuentre bien, le escribo ya que trabajaremos en conjunto en la asignatura de <strong>${asig}</strong>, en la cual soy tutor para este bimestre. Le doy la más cordial bienvenida.<br><br>
+  Por otra parte, le comparto la secuencia didáctica de la asignatura, con detalles de los temas a acordar en cada clase:<br><br>
+  <div style="margin-left: 10px;">
+    <strong>Nombre asignatura:</strong> ${asig}<br>
+    <strong>PIN zoom:</strong> ${zoomPin}<br>
+    <strong>Enlace Zoom:</strong> ${zoom}
+  </div><br>
+  ${tablaHtml}<br>
 
-Por otra parte, le comparto la secuencia didáctica de la asignatura, con detalles de los temas a acordar en cada clase:
+  <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 12px 15px; margin-bottom: 15px; border-radius: 4px;">
+    <strong style="color: #856404; font-size: 11.5pt;">⚠️ DE SUMA IMPORTANCIA: Acceso a Zoom y PIN de Anfitrión</strong><br><br>
+    <span style="color: #856404;">
+      Con la nueva modalidad que se implementa en zoom, para poder iniciar la clase, es <strong>obligatorio</strong> que reclame los permisos de administrador usando el siguiente código:<br><br>
+      <strong>PIN de anfitrión: ${zoomPin}</strong>
+    </span>
+  </div>
 
-Nombre asignatura: ${asig}
-Enlace Zoom: ${zoom}
-PIN de anfitrión: ${zoomPin}
+  <strong>Paso a paso para reclamar el rol durante la reunión:</strong><br>
+  <ol style="margin-left: 15px; padding-left: 15px; margin-top: 8px;">
+    <li style="margin-bottom: 8px;">Ingresar al enlace de Zoom de la clase.</li>
+    <li style="margin-bottom: 8px;">Una vez dentro de la sala, abrir la lista de <strong>Participantes</strong> (en la barra inferior).</li>
+    <li style="margin-bottom: 8px;">En la esquina inferior derecha de esa lista, hacer clic en <strong>"Reclamar rol de anfitrión"</strong>.</li>
+    <li style="margin-bottom: 8px;">Ingresar el PIN (${zoomPin}) y confirmar.</li>
+  </ol>
 
-${tablaTexto}
+  <p>Es fundamental que domine este procedimiento antes de su primera sesión. <strong>Si nunca ha realizado este proceso o tiene dudas, <u>debe contactarse a la brevedad</u> con el equipo de Training</strong>, quienes son los encargados oficiales de brindarle la inducción y capacitación en esta herramienta:</p>
+  
+  <div style="margin-left: 10px; margin-top: 6px; margin-bottom: 20px;">
+    <strong>Correo:</strong> training@ipp.cl<br>
+    <strong>WhatsApp:</strong> +56 9 8513 2178
+  </div>
+  Finalmente, le dejo algunas recomendaciones académicas:<br><br>
+  <ol style="margin-left: 15px; padding-left: 15px;">
+    <li style="margin-bottom: 12px;"><strong>Anuncios:</strong> Publicar bienvenida y al menos 1 anuncio semanal con objetivos del módulo y recursos de apoyo (PPT, videos, PDF, enlaces, ejercicios, etc.).</li>
+    <li style="margin-bottom: 12px;"><strong>Suspensión de clases:</strong> Evitar suspender. Si ocurre por fuerza mayor, el docente debe informar en Canvas y coordinar con el tutor la reprogramación dentro de la misma semana.</li>
+    <li style="margin-bottom: 12px;"><strong>Clases prácticas:</strong> Se recomienda incorporar actividades prácticas y herramientas interactivas que fomenten la participación de los estudiantes.</li>
+    <li style="margin-bottom: 12px;"><strong>Evaluaciones:</strong> El docente debe conocer todas las evaluaciones, trabajos y fechas de entrega para poder resolver dudas durante las clases.</li>
+  </ol><br>
+  Cualquier comentario o duda, me puede indicar a través de esta vía.<br><br>
+  Saludos,<br><br>
+  <strong>${tutor}</strong><br>
+  Tutor Académico IPP
+</div>`;
 
-Es importante considerar que el acceso a Zoom se realiza mediante el PIN de anfitrión.
-
-Cómo reclamar el rol de anfitrión en Zoom:
-
-1. Ingresar al enlace de Zoom o entrar a la reunión usando el ID de reunión.
-2. Una vez dentro de la sala, ubicar su nombre en la lista de participantes.
-3. En el menú de opciones de su usuario (los tres puntos), seleccionar “Reclamar rol de anfitrión”.
-4. Ingresar el PIN de anfitrión proporcionado.
-5. Al validar el PIN, obtendrá el rol de anfitrión y podrá iniciar y gestionar la clase.
-
-Si tiene dudas con este proceso, puede comunicarse con el equipo de Training:
-
-Correo: training@ipp.cl  
-WhatsApp: +56 9 8513 2178
-
-Finalmente, le dejo algunas recomendaciones:
-
-1. Anuncios: Publicar bienvenida y al menos 1 anuncio semanal con objetivos del módulo y recursos de apoyo (PPT, videos, PDF, enlaces, ejercicios, etc.).
-
-2. Suspensión de clases: Evitar suspender. Si ocurre por fuerza mayor, el docente debe informar en Canvas y coordinar con el tutor la reprogramación dentro de la misma semana.
-
-3. Clases prácticas: Se recomienda incorporar actividades prácticas y herramientas interactivas que fomenten la participación de los estudiantes.
-
-4. Evaluaciones: El docente debe conocer todas las evaluaciones, trabajos y fechas de entrega para poder resolver dudas durante las clases.
-
-Cualquier comentario o duda, me puede indicar a través de esta vía.
-
-Saludos,
-${tutor}
-Tutor Académico IPP`;
-
-    document.getElementById('correo-cuerpo').value = cuerpo;
+    const correoArea = document.getElementById('correo-cuerpo');
+    if(correoArea) {
+        correoArea.innerHTML = cuerpo;
+    }
 }
+window.generarCorreoDocente = generarCorreoDocente;
 
 function copiarContenidoActual() {
     const esCorreo = document.getElementById('preview-correo-container').style.display === 'block';
+    
     if (esCorreo) {
-        const texto = document.getElementById('correo-cuerpo').value;
-        if(!texto) { showToast("⚠ Genera el correo primero", true); return; }
-        navigator.clipboard.writeText(texto).then(() => showToast("✓ Correo copiado"));
+        const correoDiv = document.getElementById('correo-cuerpo');
+        if(!correoDiv || correoDiv.innerHTML.trim() === "") { 
+            showToast("⚠ Genera el correo primero", true); 
+            return; 
+        }
+
+        // Copiar con formato HTML para que Outlook lo reciba correctamente
+        const htmlContent = correoDiv.innerHTML;
+        const htmlFull = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${htmlContent}</body></html>`;
+
+        if (navigator.clipboard && window.ClipboardItem) {
+            // Método moderno: copia como HTML formateado (Outlook lo recibe con formato)
+            const blob = new Blob([htmlFull], { type: 'text/html' });
+            const item = new ClipboardItem({ 'text/html': blob });
+            navigator.clipboard.write([item])
+                .then(() => showToast("✓ Correo copiado con formato — pega en Outlook"))
+                .catch(() => {
+                    // Fallback: selección clásica
+                    _copiarPorSeleccion(correoDiv);
+                });
+        } else {
+            // Fallback para navegadores sin ClipboardItem
+            _copiarPorSeleccion(correoDiv);
+        }
+
     } else {
-        // Buscamos el contenido del textarea donde guardas el HTML del anuncio
         const html = document.getElementById('code-area').value;
         navigator.clipboard.writeText(html).then(() => showToast("✓ HTML del Anuncio copiado"));
+    }
+}
+window.copiarContenidoActual = copiarContenidoActual;
+
+function _copiarPorSeleccion(correoDiv) {
+    // Fallback: intentar con ClipboardItem de texto plano
+    const texto = correoDiv.innerText || correoDiv.textContent;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(texto)
+            .then(() => showToast("✓ Correo copiado (texto plano) — pega en Outlook"))
+            .catch(() => showToast("⚠ No se pudo copiar. Selecciona el texto manualmente.", true));
+    } else {
+        showToast("⚠ Tu navegador no permite copiar automáticamente. Selecciona el texto manualmente.", true);
     }
 }

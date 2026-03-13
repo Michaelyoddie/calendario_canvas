@@ -512,19 +512,6 @@
     Generador de Anuncios Canvas
   </div>
   <span class="header-tag">IPP / TecLab</span>
-
-  <button class="btn btn-danger btn-sm" onclick="confirmarLimpiezaTotal()" style="margin-left: 20px;">
-    🗑 Reiniciar Anuncio
-  </button>
-
-  <script>
-    function confirmarLimpiezaTotal() {
-        if(confirm("¿Seguro? Se borrarán todos los datos guardados para empezar desde cero.")) {
-            localStorage.removeItem('db_canvas_michael');
-            location.reload();
-        }
-    }
-  </script>
 </header>
 
 <div class="app">
@@ -624,17 +611,12 @@
     </div>
 
     <div class="section" id="tab-evalua">
-      <div class="row-2">
-        <div class="field-group">
-          <label>Nombre evaluación</label>
-          <input type="text" id="evalua-nombre" value="API / PRUEBA 1 "/>
-        </div>
-        <div class="field-group">
-          <label>Fecha de entrega</label>
-          <input type="date" id="evalua-fecha" />
-        </div>
+      <div class="field-group">
+        <label>Fecha de entrega API 1 (sem. 3)</label>
+        <input type="date" id="evalua-fecha" />
+        <small style="color: var(--text-muted); font-size: .75rem;">Las fechas de API 2, 3 y 4 se calcularán automáticamente (sem. 4, 6 y 7).</small>
       </div>
-      <button class="btn btn-primary btn-full" id="btn-add-evalua">+ Agregar evaluación</button>
+      <button class="btn btn-primary btn-full" id="btn-add-evalua">+ Generar evaluaciones</button>
       <div class="divider"></div>
       <div id="lista-evalua"><div class="empty-state">Sin evaluaciones agregadas.</div></div>
     </div>
@@ -681,7 +663,6 @@
       </div>
       <div class="preview-actions">
         <button class="btn btn-secondary btn-sm" onclick="copiarContenidoActual()">📋 Copiar</button>
-        <button class="btn btn-success btn-sm" id="btn-descargar">⬇ Descargar .html</button>
       </div>
     </div>
 
@@ -690,7 +671,7 @@
         <iframe id="preview-frame" style="width: 100%; height: 100%; border: none; background: white; border-radius: 10px;"></iframe>
       </div>
       <div id="preview-correo-container" style="display: none; height: 100%; padding: 20px;">
-        <textarea id="correo-cuerpo" style="width: 100%; height: 100%; background: var(--surface2); color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 20px; resize: none; font-family: var(--mono); font-size: 0.85rem;" readonly></textarea>
+        <div id="correo-cuerpo" style="width: 100%; height: 100%; background: #ffffff; color: #222222; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-y: auto; font-family: Calibri, sans-serif; font-size: 11pt;"></div>
       </div>
       <textarea id="code-area" style="display: none;"></textarea>
     </div>
