@@ -284,7 +284,6 @@ function ordenarEntregas(entregas) {
 
 // =========================================================
 // GENERACIÓN DE CLASES DESDE SECUENCIA
-// (traducción directa de generar_clases_desde_secuencia)
 // =========================================================
 
 function generarClasesDesdeSecuencia(nombreAsignatura, inicioBimestreTexto, diaClase, horaClase, tipoSecuencia) {
@@ -307,7 +306,7 @@ function generarClasesDesdeSecuencia(nombreAsignatura, inicioBimestreTexto, diaC
   const fechasOcupadas = new Set(); // claves "YYYY-MM-DD"
   let desplazamientoSemanas = 0;
 
-  // Ordenar semanas como Python: sorted(secuencia.items())
+  // Ordenar semanas
   const semanasOrdenadas = Object.entries(secuencia)
     .map(([k, v]) => [parseInt(k), v])
     .sort((a, b) => a[0] - b[0]);
@@ -323,32 +322,33 @@ function generarClasesDesdeSecuencia(nombreAsignatura, inicioBimestreTexto, diaC
 
     if (!esMasterclass && esFeriado(fechaOrig, feriados)) {
       const nombreF = nombreFeriado(fechaOrig, feriados);
-      const viernes = obtenerViernesMismaSemana(fechaOrig);
-
+      
       // getDay() 5 = viernes en JS
       const esFechaViernes = fechaOrig.getDay() === 5;
-      const viernesKey = fechaAKey(viernes);
 
-      if (!esFechaViernes && !esFeriado(viernes, feriados) && !fechasOcupadas.has(viernesKey)) {
-        fechaFin = viernes;
-        obs = `Reprogramada por feriado (${nombreF}) al ${formatearFecha(viernes)}.`;
+      if (esFechaViernes) {
+        // REGLA 1: Clase original es viernes y es feriado
+        fechaFin = new Date(fechaOrig);
+        obs = `Feriado (${nombreF}). Debe ser reagendada, previa verificación de la disponibilidad del profesor durante la semana siguiente.`;
       } else {
-        // Buscar siguiente semana disponible
-        while (true) {
-          desplazamientoSemanas++;
-          const candidata = obtenerFechaClase(
-            inicioSemana1,
-            semBase + desplazamientoSemanas,
-            diaClase
-          );
-          if (!esFeriado(candidata, feriados) && !fechasOcupadas.has(fechaAKey(candidata))) {
-            fechaFin = candidata;
-            obs = `Reprogramada por feriado (${nombreF}) al ${formatearFecha(candidata)}.`;
-            break;
-          }
+        // REGLA 2: Clase original es de lunes a jueves y es feriado
+        const viernes = obtenerViernesMismaSemana(fechaOrig);
+        const viernesKey = fechaAKey(viernes);
+
+        // Verificamos si el viernes es una fecha limpia y disponible
+        if (!esFeriado(viernes, feriados) && !fechasOcupadas.has(viernesKey)) {
+          fechaFin = viernes;
+          obs = `Reprogramada por feriado (${nombreF}) al ${formatearFecha(viernes)}.`;
+        } else {
+          // REGLA 3: El viernes de esa semana TAMBIÉN es feriado o ya está ocupado.
+          // Revertimos a la fecha original para no inyectar una fecha inválida y pedimos gestión manual.
+          fechaFin = new Date(fechaOrig);
+          let motivoViernes = esFeriado(viernes, feriados) ? "también es feriado" : "presenta tope de agenda";
+          obs = `Feriado (${nombreF}) y el viernes de esta semana ${motivoViernes}. Debe ser reagendada, previa verificación de la disponibilidad del profesor durante la semana siguiente.`;
         }
       }
     } else if (!esMasterclass && fechasOcupadas.has(fechaAKey(fechaOrig))) {
+      // Manejo de conflictos de agenda estándar (tope de clases en el mismo día, sin ser feriado)
       while (true) {
         desplazamientoSemanas++;
         const candidata = obtenerFechaClase(
