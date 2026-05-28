@@ -130,25 +130,23 @@ function calcularSemanaSanta(anio) {
 }
 
 /**
- * Regla de traslado chilena:
- * - Domingo  → lunes siguiente
- * - Martes   → lunes anterior
- * - Mié/Jue/Vie → lunes siguiente
- * - Lun/Sáb  → sin traslado
+ * Regla de traslado chilena (Ley 19.668):
+ * - Martes, Miércoles, Jueves → lunes de la MISMA semana (hacia atrás).
+ * - Viernes → lunes de la SEMANA SIGUIENTE (hacia adelante).
+ * - Sábado y Domingo → no se trasladan.
  */
 function trasladar(fecha) {
-  const dow = fecha.getDay(); // 0=dom,1=lun,...,6=sáb
+  const dow = fecha.getDay(); // 0=dom, 1=lun, ..., 6=sáb
   const r = new Date(fecha);
-  if (dow === 0) { r.setDate(fecha.getDate() + 1); return r; }  // dom → lun
-  if (dow === 2) { r.setDate(fecha.getDate() - 1); return r; }  // mar → lun anterior
-  if (dow >= 3 && dow <= 5) { r.setDate(fecha.getDate() + (8 - dow)); return r; } // mié/jue/vie → lun
-  return fecha; // lun, sáb: sin cambio
+  
+  if (dow === 2) { r.setDate(fecha.getDate() - 1); return r; } // Mar -> Lun
+  if (dow === 3) { r.setDate(fecha.getDate() - 2); return r; } // Mié -> Lun
+  if (dow === 4) { r.setDate(fecha.getDate() - 3); return r; } // Jue -> Lun
+  if (dow === 5) { r.setDate(fecha.getDate() + 3); return r; } // Vie -> Lun
+  
+  return fecha; // Dom, Lun, Sáb: sin cambio
 }
 
-/**
- * Devuelve un Map con "YYYY-MM-DD" -> "Nombre feriado"
- * para los años indicados. Equivalente a holidays.country_holidays("CL").
- */
 function obtenerFeriadosChile(anios) {
   const feriados = new Map();
 
@@ -163,34 +161,38 @@ function obtenerFeriadosChile(anios) {
     add(1,  1,  "Año Nuevo");
     add(5,  1,  "Día Nacional del Trabajo");
     add(5,  21, "Día de las Glorias Navales");
+    add(7,  16, "Día de la Virgen del Carmen"); // CORREGIDO: Es fijo
     add(8,  15, "Asunción de la Virgen");
     add(9,  18, "Independencia Nacional");
     add(9,  19, "Día de las Glorias del Ejército");
+    add(11, 1,  "Día de Todos los Santos");     // CORREGIDO: Es fijo
     add(12, 8,  "Inmaculada Concepción");
     add(12, 25, "Navidad");
 
-    // Feriados con regla de traslado al lunes
-    add(6,  29, "San Pedro y San Pablo",                          true);
-    add(7,  16, "Día de la Virgen del Carmen",                    true);
-    add(10, 12, "Día del Encuentro de Dos Mundos",                true);
-    add(10, 31, "Día de las Iglesias Evangélicas y Protestantes", true);
-    add(11, 1,  "Día de Todos los Santos",                        true);
+    // Feriados con regla de traslado al lunes (Ley 19.668)
+    add(6,  29, "San Pedro y San Pablo", true);
+    add(10, 12, "Día del Encuentro de Dos Mundos", true);
+
+    // Día de las Iglesias Evangélicas y Protestantes (Ley 20.299)
+    // Si cae martes -> viernes anterior. Si cae miércoles -> viernes posterior.
+    let evang = new Date(anio, 9, 31); 
+    let dowEvang = evang.getDay();
+    if (dowEvang === 2) {
+      evang.setDate(evang.getDate() - 4); // Al viernes 27 de oct
+    } else if (dowEvang === 3) {
+      evang.setDate(evang.getDate() + 2); // Al viernes 2 de nov
+    }
+    feriados.set(fechaAKey(evang), "Día de las Iglesias Evangélicas y Protestantes");
 
     // Semana Santa (móviles, calculados con algoritmo de Butcher)
     const { viernesSanto, sabadoSanto } = calcularSemanaSanta(anio);
     feriados.set(fechaAKey(viernesSanto), "Viernes Santo");
     feriados.set(fechaAKey(sabadoSanto),  "Sábado Santo");
 
-    // Día de los Pueblos Indígenas: lunes más cercano al 21 de junio
-    const jun21 = new Date(anio, 5, 21);
-    const dow21 = jun21.getDay();
-    let indigena = new Date(jun21);
-    if (dow21 !== 1) { // si no es lunes, buscar el lunes más cercano
-      const diasAtras    = dow21 === 0 ? 6 : dow21 - 1;
-      const diasAdelante = dow21 === 0 ? 1 : 8 - dow21;
-      indigena.setDate(21 + (diasAtras <= diasAdelante ? -diasAtras : diasAdelante));
-    }
-    feriados.set(fechaAKey(indigena), "Día de los Pueblos Indígenas");
+    // Día de los Pueblos Indígenas (Ley 21.357) - CORREGIDO: Es fijo en el solsticio
+    let diaSolsticio = (anio === 2024 || anio === 2025) ? 20 : 21;
+    let indigena = new Date(anio, 5, diaSolsticio);
+    feriados.set(fechaAKey(indigena), "Día Nacional de los Pueblos Indígenas");
   }
 
   return feriados;
