@@ -106,15 +106,23 @@
     .tabs {
       display: flex;
       border-bottom: 1px solid var(--border);
-      padding: 0 1.25rem;
+      padding: 0 0.5rem; /* Se redujo el espacio lateral del contenedor */
       gap: 0;
       position: sticky;
       top: 0;
       background: var(--surface);
       z-index: 10;
+      overflow-x: auto; /* Permite deslizar horizontalmente si se achica el panel */
+      scrollbar-width: none; /* Oculta el scroll visual en Firefox */
     }
+
+    /* Oculta el scroll visual en Chrome, Edge y Safari */
+    .tabs::-webkit-scrollbar { 
+      display: none; 
+    }
+
     .tab {
-      padding: .75rem 1rem;
+      padding: .75rem 0.6rem; /* Se redujo el espacio entre el texto y el borde del botón */
       font-size: .8rem;
       font-weight: 500;
       color: var(--text-muted);
