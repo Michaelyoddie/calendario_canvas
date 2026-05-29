@@ -956,16 +956,19 @@ function actualizarPreview() {
 // COPIAR Y DESCARGAR
 // ═══════════════════════════════════════════════════════
 
-document.getElementById("btn-descargar").addEventListener("click", () => {
-  const html = document.getElementById("code-area").value;
-  const asig = document.getElementById("asignatura").value || "anuncio";
-  const blob = new Blob([html], { type: "text/html" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `anuncio-${asig.toLowerCase().replace(/\s+/g, "-")}.html`;
-  a.click();
-  showToast("✓ Archivo descargado");
-});
+const btnDescargar = document.getElementById("btn-descargar");
+if (btnDescargar) {
+  btnDescargar.addEventListener("click", () => {
+    const html = document.getElementById("code-area").value;
+    const asig = document.getElementById("asignatura").value || "anuncio";
+    const blob = new Blob([html], { type: "text/html" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `anuncio-${asig.toLowerCase().replace(/\s+/g, "-")}.html`;
+    a.click();
+    showToast("✓ Archivo descargado");
+  });
+}
 
 // ═══════════════════════════════════════════════════════
 // UTILIDADES UI
@@ -1308,3 +1311,33 @@ function _copiarPorSeleccion(correoDiv) {
         showToast("⚠ Tu navegador no permite copiar automáticamente. Selecciona el texto manualmente.", true);
     }
 }
+
+
+// ═══════════════════════════════════════════════════════
+// CONTROLES DE ZOOM PARA EL PREVIEW
+// ═══════════════════════════════════════════════════════
+let currentZoom = 1;
+
+function cambiarZoom(delta) {
+    currentZoom += delta;
+    
+    // Limitar el zoom (mínimo 40%, máximo 160%)
+    if (currentZoom < 0.4) currentZoom = 0.4;
+    if (currentZoom > 1.6) currentZoom = 1.6;
+    
+    // Actualizar el número en la interfaz
+    const spanNivel = document.getElementById('zoom-nivel');
+    if (spanNivel) {
+        spanNivel.textContent = Math.round(currentZoom * 100) + '%';
+    }
+    
+    // Aplicar zoom a los contenedores padre en lugar de los elementos directos
+    const vistaAnuncio = document.getElementById("preview-anuncio-container");
+    if (vistaAnuncio) vistaAnuncio.style.zoom = currentZoom;
+
+    const vistaCorreo = document.getElementById("preview-correo-container");
+    if (vistaCorreo) vistaCorreo.style.zoom = currentZoom;
+}
+
+// Exponer la función globalmente para que el HTML pueda llamarla
+window.cambiarZoom = cambiarZoom;

@@ -670,6 +670,12 @@
         <div class="preview-tab" onclick="cambiarVistaPreview('correo')" id="tab-ver-correo">VISTA CORREO</div>
       </div>
       <div class="preview-actions">
+        <div style="display: flex; align-items: center; gap: 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px;">
+          <button class="btn btn-secondary btn-sm" style="border: none; background: transparent; padding: 0.2rem 0.5rem;" onclick="cambiarZoom(-0.15)">➖</button>
+          <span id="zoom-nivel" style="font-size: .75rem; font-family: var(--mono); min-width: 45px; text-align: center; color: var(--text-muted);">100%</span>
+          <button class="btn btn-secondary btn-sm" style="border: none; background: transparent; padding: 0.2rem 0.5rem;" onclick="cambiarZoom(0.15)">➕</button>
+        </div>
+        
         <button class="btn btn-secondary btn-sm" onclick="copiarContenidoActual()">📋 Copiar</button>
       </div>
     </div>
