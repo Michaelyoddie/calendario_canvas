@@ -804,17 +804,20 @@ function renderListaEvalua() {
   const cont = document.getElementById("lista-evalua");
   if (state.entregas.length === 0) {
     cont.innerHTML = `<div class="empty-state">Aún no hay evaluaciones agregadas.</div>`;
-    return;
-  }
-  cont.innerHTML = state.entregas.map((e, i) => `
-    <div class="item-card">
-      <div class="item-card-body">
-        <div class="item-card-title">${e.nombre}</div>
-        <div class="item-card-sub">${e.fecha}</div>
+  } else {
+    cont.innerHTML = state.entregas.map((e, i) => `
+      <div class="item-card">
+        <div class="item-card-body">
+          <div class="item-card-title">${e.nombre}</div>
+          <div class="item-card-sub">${e.fecha}</div>
+        </div>
+        <button class="item-remove" title="Eliminar" onclick="eliminarEvalua(${i})">×</button>
       </div>
-      <button class="item-remove" title="Eliminar" onclick="eliminarEvalua(${i})">×</button>
-    </div>
-  `).join("");
+    `).join("");
+  }
+  
+  // ¡ESTA ES LA LÍNEA NUEVA! Actualiza el desplegable de recordatorios automáticamente
+  if (typeof actualizarDropdownRecordatorios === "function") actualizarDropdownRecordatorios();
 }
 
 function eliminarEvalua(i) {
@@ -1117,20 +1120,40 @@ function stopResize() {
 function cambiarVistaPreview(tipo) {
     const vistaAnuncio = document.getElementById('preview-anuncio-container');
     const vistaCorreo = document.getElementById('preview-correo-container');
+    const vistaProrroga = document.getElementById('preview-prorroga-container');
+    const vistaRecordatorio = document.getElementById('preview-recordatorio-container'); // NUEVO
+    
     const tabAnuncio = document.getElementById('tab-ver-anuncio');
     const tabCorreo = document.getElementById('tab-ver-correo');
+    const tabProrroga = document.getElementById('tab-ver-prorroga');
+    const tabRecordatorio = document.getElementById('tab-ver-recordatorio'); // NUEVO
 
+    // Ocultar todas
+    if (vistaAnuncio) vistaAnuncio.style.display = 'none';
+    if (vistaCorreo) vistaCorreo.style.display = 'none';
+    if (vistaProrroga) vistaProrroga.style.display = 'none';
+    if (vistaRecordatorio) vistaRecordatorio.style.display = 'none'; // NUEVO
+    
+    // Quitar estilos activos
+    if (tabAnuncio) { tabAnuncio.classList.remove('active'); tabAnuncio.style.color = 'var(--text-muted)'; }
+    if (tabCorreo) { tabCorreo.classList.remove('active'); tabCorreo.style.color = 'var(--text-muted)'; }
+    if (tabProrroga) { tabProrroga.classList.remove('active'); tabProrroga.style.color = 'var(--text-muted)'; }
+    if (tabRecordatorio) { tabRecordatorio.classList.remove('active'); tabRecordatorio.style.color = 'var(--text-muted)'; } // NUEVO
+
+    // Activar seleccionada
     if (tipo === 'anuncio') {
         if (vistaAnuncio) vistaAnuncio.style.display = 'block';
-        if (vistaCorreo) vistaCorreo.style.display = 'none';
         if (tabAnuncio) { tabAnuncio.classList.add('active'); tabAnuncio.style.color = 'var(--accent)'; }
-        if (tabCorreo) { tabCorreo.classList.remove('active'); tabCorreo.style.color = 'var(--text-muted)'; }
-    } else {
+    } else if (tipo === 'correo') {
         generarCorreoDocente();
-        if (vistaAnuncio) vistaAnuncio.style.display = 'none';
         if (vistaCorreo) vistaCorreo.style.display = 'block';
-        if (tabAnuncio) { tabAnuncio.classList.remove('active'); tabAnuncio.style.color = 'var(--text-muted)'; }
         if (tabCorreo) { tabCorreo.classList.add('active'); tabCorreo.style.color = 'var(--accent)'; }
+    } else if (tipo === 'prorroga') {
+        if (vistaProrroga) vistaProrroga.style.display = 'block';
+        if (tabProrroga) { tabProrroga.classList.add('active'); tabProrroga.style.color = 'var(--accent)'; }
+    } else if (tipo === 'recordatorio') { // NUEVO
+        if (vistaRecordatorio) vistaRecordatorio.style.display = 'block';
+        if (tabRecordatorio) { tabRecordatorio.classList.add('active'); tabRecordatorio.style.color = 'var(--accent)'; }
     }
 }
 window.cambiarVistaPreview = cambiarVistaPreview;
@@ -1265,40 +1288,44 @@ function generarCorreoDocente() {
 window.generarCorreoDocente = generarCorreoDocente;
 
 function copiarContenidoActual() {
-    const esCorreo = document.getElementById('preview-correo-container').style.display === 'block';
+    const vistaActiva = document.querySelector('.preview-tab.active').id;
     
-    if (esCorreo) {
+    if (vistaActiva === 'tab-ver-correo') {
         const correoDiv = document.getElementById('correo-cuerpo');
-        if(!correoDiv || correoDiv.innerHTML.trim() === "") { 
-            showToast("⚠ Genera el correo primero", true); 
-            return; 
-        }
+        if(!correoDiv || correoDiv.innerHTML.trim() === "") { showToast("⚠ Genera el correo primero", true); return; }
+        _copiarHtmlFormateado(correoDiv, "✓ Correo copiado con formato — pega en Outlook");
 
-        // Copiar con formato HTML para que Outlook lo reciba correctamente
-        const htmlContent = correoDiv.innerHTML;
-        const htmlFull = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${htmlContent}</body></html>`;
+    } else if (vistaActiva === 'tab-ver-prorroga') {
+        const prorrogaDiv = document.getElementById('preview-prorroga');
+        if(!prorrogaDiv || prorrogaDiv.innerHTML.includes("empty-state")) { showToast("⚠ Selecciona fechas primero", true); return; }
+        _copiarHtmlFormateado(prorrogaDiv, "✓ Mensaje de prórroga copiado");
 
-        if (navigator.clipboard && window.ClipboardItem) {
-            // Método moderno: copia como HTML formateado (Outlook lo recibe con formato)
-            const blob = new Blob([htmlFull], { type: 'text/html' });
-            const item = new ClipboardItem({ 'text/html': blob });
-            navigator.clipboard.write([item])
-                .then(() => showToast("✓ Correo copiado con formato — pega en Outlook"))
-                .catch(() => {
-                    // Fallback: selección clásica
-                    _copiarPorSeleccion(correoDiv);
-                });
-        } else {
-            // Fallback para navegadores sin ClipboardItem
-            _copiarPorSeleccion(correoDiv);
-        }
+    } else if (vistaActiva === 'tab-ver-recordatorio') { // NUEVO
+        const recordatorioDiv = document.getElementById('preview-recordatorio');
+        if(!recordatorioDiv || recordatorioDiv.innerHTML.includes("empty-state")) { showToast("⚠ Selecciona la fecha de cierre primero", true); return; }
+        _copiarHtmlFormateado(recordatorioDiv, "✓ Mensaje de recordatorio copiado");
 
     } else {
         const html = document.getElementById('code-area').value;
         navigator.clipboard.writeText(html).then(() => showToast("✓ HTML del Anuncio copiado"));
     }
 }
-window.copiarContenidoActual = copiarContenidoActual;
+
+// Pequeña función auxiliar para evitar repetir el código de copiado rico (HTML)
+function _copiarHtmlFormateado(elementoDiv, mensajeExito) {
+    const htmlContent = elementoDiv.innerHTML;
+    const htmlFull = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${htmlContent}</body></html>`;
+
+    if (navigator.clipboard && window.ClipboardItem) {
+        const blob = new Blob([htmlFull], { type: 'text/html' });
+        const item = new ClipboardItem({ 'text/html': blob });
+        navigator.clipboard.write([item])
+            .then(() => showToast(mensajeExito))
+            .catch(() => _copiarPorSeleccion(elementoDiv));
+    } else {
+        _copiarPorSeleccion(elementoDiv);
+    }
+}
 
 function _copiarPorSeleccion(correoDiv) {
     // Fallback: intentar con ClipboardItem de texto plano
@@ -1337,7 +1364,142 @@ function cambiarZoom(delta) {
 
     const vistaCorreo = document.getElementById("preview-correo-container");
     if (vistaCorreo) vistaCorreo.style.zoom = currentZoom;
+
+    const vistaProrroga = document.getElementById("preview-prorroga-container");
+    if (vistaProrroga) vistaProrroga.style.zoom = currentZoom;
+
+    const vistaRecordatorio = document.getElementById("preview-recordatorio-container");
+    if (vistaRecordatorio) vistaRecordatorio.style.zoom = currentZoom;
 }
 
 // Exponer la función globalmente para que el HTML pueda llamarla
 window.cambiarZoom = cambiarZoom;
+
+// ═══════════════════════════════════════════════════════
+// GENERADOR DE MENSAJES (PRÓRROGAS)
+// ═══════════════════════════════════════════════════════
+
+const inputInicioProrroga = document.getElementById("prorroga-inicio");
+const inputFinProrroga = document.getElementById("prorroga-fin");
+const previewProrroga = document.getElementById("preview-prorroga");
+const btnCopiarProrroga = document.getElementById("btn-copiar-prorroga");
+
+function actualizarMensajeProrroga() {
+    if (!inputInicioProrroga || !inputFinProrroga || !previewProrroga) return;
+
+    const valInicio = inputInicioProrroga.value;
+    const valFin = inputFinProrroga.value;
+
+    if (!valInicio || !valFin) {
+        previewProrroga.innerHTML = '<div class="empty-state" style="color: #666; border: none;">Selecciona ambas fechas para generar el mensaje.</div>';
+        return;
+    }
+
+    // Transformar de YYYY-MM-DD a texto natural en español
+    const formatearFecha = (fechaStr) => {
+        const [y, m, d] = fechaStr.split("-").map(Number);
+        const date = new Date(y, m - 1, d); // Se crea así para evitar desfases de zona horaria
+        const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+        const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+        return `${dias[date.getDay()]} ${String(d).padStart(2, '0')} de ${meses[date.getMonth()]}`;
+    };
+
+    // Transformar a formato corto Ej: 08/5
+    const formatoCorto = (fechaStr) => {
+        const [y, m, d] = fechaStr.split("-").map(Number);
+        return `${String(d).padStart(2, '0')}/${m}`; 
+    };
+
+    const textoInicio = formatearFecha(valInicio);
+    const textoFin = formatearFecha(valFin);
+    const cortoInicio = formatoCorto(valInicio);
+    const cortoFin = formatoCorto(valFin);
+
+    // Plantilla HTML idéntica a la imagen adjunta
+    const html = `
+<div style="font-family: Arial, sans-serif; font-size: 11pt; color: #222; line-height: 1.5;">
+    <h2 style="font-size: 18pt; color: #1a365d; margin-bottom: 20px;">
+        Extensión de plazo para evaluaciones pendientes – del ${cortoInicio} al ${cortoFin} ⏳
+    </h2>
+    <p><strong>Estimados/as estudiantes:</strong></p><br>
+    <p>Se comunica que las actividades correspondientes a módulos pendientes tendrán una extensión de plazo en todas las asignaturas, <strong>desde hoy ${textoInicio} hasta el ${textoFin}.</strong></p><br>
+    <p>🚀 La plataforma ya está disponible para que puedan subir sus trabajos o rendir sus evaluaciones. Les sugerimos aprovechar esta instancia para ponerse al día con sus responsabilidades académicas y continuar con su progreso 😄</p>
+    <br>
+    <p><strong>Tutores académicos.</strong></p>
+</div>`;
+
+    previewProrroga.innerHTML = html;
+}
+
+// Escuchar cambios en vivo
+if (inputInicioProrroga) inputInicioProrroga.addEventListener("input", actualizarMensajeProrroga);
+if (inputFinProrroga) inputFinProrroga.addEventListener("input", actualizarMensajeProrroga);
+
+// ═══════════════════════════════════════════════════════
+// GENERADOR DE MENSAJES (RECORDATORIOS) CONECTADO A TAREAS
+// ═══════════════════════════════════════════════════════
+
+const inputRecEval = document.getElementById("rec-evaluacion");
+const inputRecHora = document.getElementById("rec-hora");
+const previewRecordatorio = document.getElementById("preview-recordatorio");
+
+function actualizarDropdownRecordatorios() {
+    if (!inputRecEval) return;
+
+    if (state.entregas.length === 0) {
+        inputRecEval.innerHTML = '<option value="">Genera las tareas en la pestaña ③ primero</option>';
+    } else {
+        inputRecEval.innerHTML = state.entregas.map((e, index) => 
+            `<option value="${index}">${e.nombre} (Vence: ${e.fecha})</option>`
+        ).join("");
+    }
+    actualizarMensajeRecordatorio();
+}
+
+function actualizarMensajeRecordatorio() {
+    if (!inputRecEval || !previewRecordatorio) return;
+
+    const indexEval = inputRecEval.value;
+    const valHora = inputRecHora ? (inputRecHora.value || "23:59") : "23:59";
+
+    // Si no hay tareas generadas, mostramos un mensaje de advertencia
+    if (indexEval === "" || state.entregas.length === 0) {
+        previewRecordatorio.innerHTML = '<div class="empty-state" style="color: #666; border: none;">Ve a la pestaña <strong>③ Tareas</strong>, genera las evaluaciones y luego vuelve aquí.</div>';
+        return;
+    }
+
+    // Extraemos la tarea exacta desde la memoria global de la App
+    const entrega = state.entregas[indexEval];
+    const valEval = entrega.nombre; // Ej: API / PRUEBA 1
+    const valFechaStr = entrega.fecha; // Ej: 12/06/2026
+
+    // Transformamos "DD/MM/YYYY" a texto natural
+    const [d, m, y] = valFechaStr.split("/").map(Number);
+    const date = new Date(y, m - 1, d);
+    const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+    const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+    
+    const textoFecha = `${dias[date.getDay()]} ${String(d).padStart(2, '0')} de ${meses[date.getMonth()]}`;
+
+    const html = `
+<div style="font-family: Arial, sans-serif; font-size: 11pt; color: #222; line-height: 1.5;">
+    <h2 style="font-size: 18pt; color: #1a365d; margin-bottom: 20px;">
+        ¡Recordatorio! Cierre de la ${valEval} ⏳
+    </h2>
+    <p><strong>Estimados/as estudiantes:</strong></p><br>
+    <p>Espero que se encuentren muy bien.</p><br>
+    <p>A través de este mensaje, les recuerdo que la fecha límite para la entrega de la <strong>${valEval}</strong> es el próximo <strong>${textoFecha} a las ${valHora} hrs.</strong></p><br>
+    <p>Recuerden revisar las instrucciones y la rúbrica de evaluación en la plataforma antes de enviar su trabajo. Si tienen consultas, no duden en escribirme a través del wsp o correo de tutores.</p>
+    <br>
+    <p>¡Mucho éxito con esta actividad! 🚀</p><br>
+    <p><strong>Tutores académicos IPP.</strong></p>
+</div>`;
+
+    previewRecordatorio.innerHTML = html;
+}
+
+if (inputRecEval) inputRecEval.addEventListener("change", actualizarMensajeRecordatorio);
+if (inputRecHora) inputRecHora.addEventListener("input", actualizarMensajeRecordatorio);
+
+// Inicializar el dropdown al cargar (por si hay datos guardados en LocalStorage)
+setTimeout(actualizarDropdownRecordatorios, 500);

@@ -8,509 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
 
-  <style>
-    /* ── Variables ─────────────────────────────────────── */
-    :root {
-      --bg:        #0f1117;
-      --surface:   #181c27;
-      --surface2:  #1f2436;
-      --border:    #2a3050;
-      --accent:    #4f7cff;
-      --accent2:   #38d9a9;
-      --danger:    #ff5c5c;
-      --text:      #e8eaf6;
-      --text-muted:#7b86ab;
-      --radius:    10px;
-      --font:      'DM Sans', sans-serif;
-      --mono:      'DM Mono', monospace;
-    }
-
-    /* ── Reset ─────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: 18px; }
-    body {
-      font-family: var(--font);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* ── Header ────────────────────────────────────────── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 2rem;
-      height: 58px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 600;
-      font-size: 1rem;
-      letter-spacing: -0.02em;
-    }
-    .logo-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent);
-      animation: pulse 2.5s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50%       { opacity: .5; transform: scale(.8); }
-    }
-    .header-tag {
-      font-size: .75rem;
-      color: var(--text-muted);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 3px 10px;
-      font-family: var(--mono);
-    }
-
-    /* ── Layout ────────────────────────────────────────── */
-   .app {
-      display: grid;
-      /* Columna 1: Formulario (420px), Columna 2: Barra (6px), Columna 3: Preview (el resto) */
-      grid-template-columns: 420px 6px 1fr; 
-      flex: 1;
-      overflow: hidden;
-      height: calc(100vh - 58px);
-      width: 100vw;
-    }
-
-    /* ── Panel izquierdo ───────────────────────────────── */
-    .panel-left {
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-    }
-    .panel-left::-webkit-scrollbar { width: 5px; }
-    .panel-left::-webkit-scrollbar-track { background: transparent; }
-    .panel-left::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-
-    /* ── Tabs ──────────────────────────────────────────── */
-    .tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      padding: 0 0.5rem; /* Se redujo el espacio lateral del contenedor */
-      gap: 0;
-      position: sticky;
-      top: 0;
-      background: var(--surface);
-      z-index: 10;
-      overflow-x: auto; /* Permite deslizar horizontalmente si se achica el panel */
-      scrollbar-width: none; /* Oculta el scroll visual en Firefox */
-    }
-
-    /* Oculta el scroll visual en Chrome, Edge y Safari */
-    .tabs::-webkit-scrollbar { 
-      display: none; 
-    }
-
-    .tab {
-      padding: .75rem 0.6rem; /* Se redujo el espacio entre el texto y el borde del botón */
-      font-size: .8rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all .2s;
-      white-space: nowrap;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      user-select: none;
-    }
-    .tab:hover { color: var(--text); }
-    .tab.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
-    .tab-badge {
-      background: var(--accent);
-      color: #fff;
-      border-radius: 999px;
-      font-size: .65rem;
-      padding: 1px 6px;
-      font-family: var(--mono);
-      display: none;
-    }
-    .tab-badge.visible { display: inline-block; }
-
-    /* ── Secciones del panel ───────────────────────────── */
-    .section { display: none; padding: 1.5rem 1.25rem; flex: 1; }
-    .section.active { display: flex; flex-direction: column; gap: 1rem; }
-
-    /* ── Grupos de campos ──────────────────────────────── */
-    .field-group {
-      display: flex;
-      flex-direction: column;
-      gap: .35rem;
-    }
-    label {
-      font-size: .75rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      letter-spacing: .04em;
-      text-transform: uppercase;
-    }
-    input[type="text"],
-    input[type="date"],
-    select,
-    textarea {
-      width: 100%;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-family: var(--font);
-      font-size: .9rem;
-      padding: .55rem .8rem;
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
-      appearance: none;
-    }
-    input:focus, select:focus, textarea:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(79,124,255,.15);
-    }
-    select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237b86ab' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .75rem center; padding-right: 2rem; }
-
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
-    .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
-
-    /* ── Toggle ────────────────────────────────────────── */
-    .toggle-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: .65rem .9rem;
-    }
-    .toggle-label { font-size: .85rem; font-weight: 500; }
-    .toggle {
-      position: relative;
-      width: 40px; height: 22px;
-      cursor: pointer;
-    }
-    .toggle input { display: none; }
-    .toggle-track {
-      position: absolute;
-      inset: 0;
-      background: var(--border);
-      border-radius: 999px;
-      transition: background .2s;
-    }
-    .toggle input:checked ~ .toggle-track { background: var(--accent); }
-    .toggle-thumb {
-      position: absolute;
-      top: 3px; left: 3px;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      transition: left .2s;
-    }
-    .toggle input:checked ~ .toggle-thumb { left: 21px; }
-
-    /* ── Botones ───────────────────────────────────────── */
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      font-family: var(--font);
-      font-size: .82rem;
-      font-weight: 500;
-      padding: .5rem .9rem;
-      border-radius: var(--radius);
-      border: none;
-      cursor: pointer;
-      transition: all .15s;
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-    .btn-primary:hover { filter: brightness(1.1); }
-    .btn-secondary {
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
-    .btn-danger {
-      background: transparent;
-      color: var(--danger);
-      border: 1px solid var(--danger);
-    }
-    .btn-danger:hover { background: var(--danger); color: #fff; }
-    .btn-success {
-      background: var(--accent2);
-      color: #0f1117;
-      font-weight: 600;
-    }
-    .btn-success:hover { filter: brightness(1.1); }
-    .btn-full { width: 100%; }
-    .btn-sm { font-size: .75rem; padding: .35rem .7rem; }
-
-    .btn-row {
-      display: flex;
-      gap: .5rem;
-      flex-wrap: wrap;
-    }
-
-    /* ── Lista de items ────────────────────────────────── */
-    .item-list {
-      display: flex;
-      flex-direction: column;
-      gap: .4rem;
-      max-height: 240px;
-      overflow-y: auto;
-    }
-    .item-list::-webkit-scrollbar { width: 4px; }
-    .item-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-
-    .item-card {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: .6rem .8rem;
-      display: flex;
-      align-items: center;
-      gap: .6rem;
-      font-size: .82rem;
-      transition: border-color .15s;
-    }
-    .item-card:hover { border-color: var(--accent); }
-    .item-card-body { flex: 1; min-width: 0; }
-    .item-card-title {
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .item-card-sub {
-      color: var(--text-muted);
-      font-size: .75rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .item-card-tag {
-      font-family: var(--mono);
-      font-size: .7rem;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 2px 7px;
-      color: var(--accent);
-      white-space: nowrap;
-    }
-    .item-remove {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-      padding: 2px 4px;
-      border-radius: 4px;
-      transition: color .15s, background .15s;
-    }
-    .item-remove:hover { color: var(--danger); background: rgba(255,92,92,.1); }
-
-    /* ── Separador ─────────────────────────────────────── */
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: .25rem 0;
-    }
-
-    /* ── Vacío ─────────────────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      color: var(--text-muted);
-      font-size: .8rem;
-      padding: 1.25rem;
-      border: 1px dashed var(--border);
-      border-radius: var(--radius);
-    }
-
-    /* ── Panel derecho (preview) ───────────────────────── */
-    .panel-right {
-      display: flex;
-      flex-direction: column;
-      background: var(--bg);
-      overflow: hidden;
-    }
-    .preview-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: .75rem 1.5rem;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      gap: 1rem;
-    }
-    .preview-title {
-      font-size: .8rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .preview-title span {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--accent2);
-      display: inline-block;
-      box-shadow: 0 0 8px var(--accent2);
-    }
-    .preview-actions { display: flex; gap: .5rem; }
-
-    /* Tabs preview */
-    .preview-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-      padding: 0 1.5rem;
-    }
-    .preview-tab {
-      padding: .6rem 1rem;
-      font-size: .78rem;
-      font-weight: 500;
-      color: var(--text-muted);
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-      transition: all .2s;
-    }
-    .preview-tab:hover { color: var(--text); }
-    .preview-tab.active { color: var(--accent2); border-bottom-color: var(--accent2); }
-
-    .preview-body {
-      flex: 1;
-      overflow: hidden;
-      position: relative;
-    }
-    #preview-rendered, #preview-code {
-      position: absolute;
-      inset: 0;
-      overflow-y: auto;
-      transition: opacity .2s;
-    }
-    #preview-rendered { padding: 1.5rem; display: none; }
-    #preview-rendered.active { display: block; }
-    #preview-code { display: none; }
-    #preview-code.active { display: block; }
-    #preview-rendered::-webkit-scrollbar,
-    #preview-code::-webkit-scrollbar { width: 5px; }
-    #preview-rendered::-webkit-scrollbar-thumb,
-    #preview-code::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-
-    /* iframe para el preview */
-    #preview-frame {
-      width: 100%;
-      height: 100%;
-      border: none;
-      background: #fff;
-      border-radius: var(--radius);
-    }
-
-    /* código */
-    #code-area {
-      width: 100%;
-      height: 100%;
-      background: var(--surface);
-      color: var(--text);
-      font-family: var(--mono);
-      font-size: .78rem;
-      line-height: 1.6;
-      padding: 1.25rem 1.5rem;
-      border: none;
-      outline: none;
-      resize: none;
-    }
-
-    /* ── Toast ─────────────────────────────────────────── */
-    .toast {
-      position: fixed;
-      bottom: 1.5rem;
-      right: 1.5rem;
-      background: var(--accent2);
-      color: #0f1117;
-      font-weight: 600;
-      font-size: .85rem;
-      padding: .65rem 1.2rem;
-      border-radius: var(--radius);
-      opacity: 0;
-      transform: translateY(10px);
-      transition: all .3s;
-      pointer-events: none;
-      z-index: 999;
-    }
-    .toast.show { opacity: 1; transform: translateY(0); }
-
-    /* ── Observacion badge ─────────────────────────────── */
-    .obs-badge {
-      font-size: .7rem;
-      background: rgba(255,200,0,.12);
-      color: #f5c842;
-      border: 1px solid rgba(245,200,66,.25);
-      border-radius: 6px;
-      padding: 1px 7px;
-    }
-
-    /* ── Modo sin clases ───────────────────────────────── */
-    .modo-btn-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: .5rem;
-    }
-    .modo-btn {
-      padding: .6rem;
-      border-radius: var(--radius);
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      color: var(--text-muted);
-      font-family: var(--font);
-      font-size: .82rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all .2s;
-      text-align: center;
-    }
-    .modo-btn.active {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: rgba(79,124,255,.08);
-    }
-
-    /* ── Responsive ────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-      .panel-left { height: auto; max-height: 50vh; }
-    }
-
-    
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
@@ -531,6 +29,8 @@
       <div class="tab" data-tab="clases">② Clases <span class="tab-badge" id="badge-clases">0</span></div>
       <div class="tab" data-tab="evalua">③ Tareas <span class="tab-badge" id="badge-evalua">0</span></div>
       <div class="tab" data-tab="extras">④ Tutorias</div>
+      <div class="tab" data-tab="mensajes">⑤ Prórrogas</div>
+      <div class="tab" data-tab="recordatorios">⑥ Recordatorios</div>
     </div>
 
     <div class="section active" id="tab-datos">
@@ -613,30 +113,41 @@
         </select>
       </div>
       <button class="btn btn-primary btn-full" id="btn-generar-clases">⚡ Generar calendario</button>
-      <button class="btn btn-danger btn-full" id="btn-limpiar-clases" style="margin-top: 10px; display: none;">🗑 Limpiar clases</button>
+      <button class="btn btn-danger btn-full btn-limpiar-clases" id="btn-limpiar-clases">🗑 Limpiar clases</button>
       <div class="divider"></div>
-      <div id="lista-clases"><div class="empty-state">El calendario aparecerá aquí luego de generarlo.</div></div>
+      <div id="lista-clases">
+        <div class="empty-state">El calendario aparecerá aquí luego de generarlo.</div>
+      </div>
     </div>
 
     <div class="section" id="tab-evalua">
       <div class="field-group">
         <label>Fecha de entrega API 1 (sem. 3)</label>
         <input type="date" id="evalua-fecha" />
-        <small style="color: var(--text-muted); font-size: .75rem;">Las fechas de API 2, 3 y 4 se calcularán automáticamente (sem. 4, 6 y 7).</small>
+        <small class="help-text">Las fechas de API 2, 3 y 4 se calcularán automáticamente (sem. 4, 6 y 7).</small>
       </div>
       <button class="btn btn-primary btn-full" id="btn-add-evalua">+ Generar evaluaciones</button>
       <div class="divider"></div>
-      <div id="lista-evalua"><div class="empty-state">Sin evaluaciones agregadas.</div></div>
+      <div id="lista-evalua">
+        <div class="empty-state">Sin evaluaciones agregadas.</div>
+      </div>
     </div>
 
     <div class="section" id="tab-extras">
       <div class="toggle-row">
         <span class="toggle-label">Incluir tutorías</span>
-        <label class="toggle"><input type="checkbox" id="toggle-tutorias" /><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-tutorias" />
+          <div class="toggle-track"></div>
+          <div class="toggle-thumb"></div>
+        </label>
       </div>
-      <div id="bloque-tutorias" style="display:none; flex-direction:column; gap:.75rem;">
+      <div id="bloque-tutorias" class="bloque-tutorias">
         <div class="row-2">
-          <div class="field-group"><label>Tutoría</label><input type="date" id="tut-fecha" /></div>
+          <div class="field-group">
+            <label>Tutoría</label>
+            <input type="date" id="tut-fecha" />
+          </div>
           <div class="field-group">
             <label>Hora</label>
             <select id="tut-hora">
@@ -645,11 +156,16 @@
             </select>
           </div>
         </div>
-        <div class="field-group"><label>Sesiones</label><input type="text" id="tut-cantidad" value="4" /></div>
+        <div class="field-group">
+          <label>Sesiones</label>
+          <input type="text" id="tut-cantidad" value="4" />
+        </div>
         <button class="btn btn-secondary btn-full" id="btn-add-tut">+ Generar serie</button>
         <div id="lista-tut"></div>
       </div>
+
       <div class="divider"></div>
+
       <div class="field-group">
         <label>Grabaciones</label>
         <input type="text" id="grab-nombre" placeholder="Nombre clase" />
@@ -659,6 +175,41 @@
       <div id="lista-grab"></div>
     </div>
 
+    <div class="section" id="tab-mensajes">
+      <div class="row-2">
+        <div class="field-group">
+          <label>Inicio de prórroga</label>
+          <input type="date" id="prorroga-inicio" />
+        </div>
+        <div class="field-group">
+          <label>Fin de prórroga</label>
+          <input type="date" id="prorroga-fin" />
+        </div>
+      </div>
+      
+      <div class="divider"></div>
+      <p class="help-text" style="text-align: center; margin-top: 10px;">
+        Selecciona las fechas aquí y haz clic en la pestaña <strong>VISTA MENSAJE</strong> del panel derecho para previsualizar y copiar el anuncio.
+      </p>
+    </div>
+
+    <div class="section" id="tab-recordatorios">
+      <div class="field-group">
+        <label>Evaluación a recordar</label>
+        <select id="rec-evaluacion">
+          <option value="">Genera las tareas en la pestaña ③ primero</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Hora límite</label>
+        <input type="time" id="rec-hora" value="23:59" />
+      </div>
+      <div class="divider"></div>
+      <p class="help-text" style="text-align: center; margin-top: 10px;">
+        Selecciona la evaluación y ve a la pestaña <strong>RECORDATORIO API</strong> en el panel derecho para previsualizar y copiar el anuncio.
+      </p>
+    </div>
+
   </div>
 
   <div id="resizer"></div>
@@ -666,14 +217,16 @@
   <div class="panel-right" id="panel-derecho-main">
     <div class="preview-header">
       <div class="preview-tabs">
-        <div class="preview-tab active" onclick="cambiarVistaPreview('anuncio')" id="tab-ver-anuncio">VISTA ANUNCIO</div>
-        <div class="preview-tab" onclick="cambiarVistaPreview('correo')" id="tab-ver-correo">VISTA CORREO</div>
+        <div class="preview-tab active" onclick="cambiarVistaPreview('anuncio')" id="tab-ver-anuncio">ANUNCIO BIENVENIDA</div>
+        <div class="preview-tab" onclick="cambiarVistaPreview('correo')" id="tab-ver-correo">CORREO DOCENTE</div>
+        <div class="preview-tab" onclick="cambiarVistaPreview('prorroga')" id="tab-ver-prorroga">ANUNCIOS PRORROGAS </div>
+        <div class="preview-tab" onclick="cambiarVistaPreview('recordatorio')" id="tab-ver-recordatorio">RECORDATORIO API</div>
       </div>
       <div class="preview-actions">
-        <div style="display: flex; align-items: center; gap: 4px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px;">
-          <button class="btn btn-secondary btn-sm" style="border: none; background: transparent; padding: 0.2rem 0.5rem;" onclick="cambiarZoom(-0.15)">➖</button>
-          <span id="zoom-nivel" style="font-size: .75rem; font-family: var(--mono); min-width: 45px; text-align: center; color: var(--text-muted);">100%</span>
-          <button class="btn btn-secondary btn-sm" style="border: none; background: transparent; padding: 0.2rem 0.5rem;" onclick="cambiarZoom(0.15)">➕</button>
+        <div class="zoom-controls">
+          <button class="btn btn-secondary btn-sm zoom-btn" onclick="cambiarZoom(-0.15)">➖</button>
+          <span id="zoom-nivel">100%</span>
+          <button class="btn btn-secondary btn-sm zoom-btn" onclick="cambiarZoom(0.15)">➕</button>
         </div>
         
         <button class="btn btn-secondary btn-sm" onclick="copiarContenidoActual()">📋 Copiar</button>
@@ -681,17 +234,29 @@
     </div>
 
     <div class="preview-body">
-      <div id="preview-anuncio-container" style="display: block; height: 100%; padding: 20px;">
-        <iframe id="preview-frame" style="width: 100%; height: 100%; border: none; background: white; border-radius: 10px;"></iframe>
+      <div id="preview-anuncio-container" class="preview-container visible">
+        <iframe id="preview-frame"></iframe>
       </div>
-      <div id="preview-correo-container" style="display: none; height: 100%; padding: 20px;">
-        <div id="correo-cuerpo" style="width: 100%; height: 100%; background: #ffffff; color: #222222; border: 1px solid var(--border); border-radius: 10px; padding: 20px; overflow-y: auto; font-family: Calibri, sans-serif; font-size: 11pt;"></div>
+      <div id="preview-correo-container" class="preview-container">
+        <div id="correo-cuerpo"></div>
       </div>
-      <textarea id="code-area" style="display: none;"></textarea>
+      <div id="preview-prorroga-container" class="preview-container">
+        <div id="preview-prorroga" class="preview-prorroga" style="height: 100%; overflow-y: auto;">
+          <div class="empty-state empty-state-prorroga">Selecciona ambas fechas en el panel izquierdo para generar el mensaje.</div>
+        </div>
+      </div>
+      <div id="preview-recordatorio-container" class="preview-container">
+        <div id="preview-recordatorio" class="preview-prorroga" style="height: 100%; overflow-y: auto;">
+          <div class="empty-state empty-state-prorroga">Selecciona la fecha de cierre en el panel izquierdo para generar el mensaje.</div>
+        </div>
+      </div>
+      <textarea id="code-area"></textarea>
     </div>
   </div>
 
-</div> <div class="toast" id="toast"></div>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script src="logica.js"></script>
 </body>
