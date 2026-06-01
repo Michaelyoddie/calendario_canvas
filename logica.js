@@ -765,7 +765,7 @@ function eliminarClase(i) {
   actualizarPreview();
 }
 
-// ═══════════════════════════════════════════════════════
+/// ═══════════════════════════════════════════════════════
 // EVALUACIONES - AUTO-GENERACIÓN DESDE FECHA API 1
 // Semanas fijas: API1=sem3, API2=sem4, API3=sem6, API4=sem7
 // Diferencias en semanas desde API1: +0, +1, +3, +4
@@ -780,11 +780,23 @@ document.getElementById("btn-add-evalua").addEventListener("click", () => {
     return;
   }
 
-  // Calcular las 4 fechas automáticamente
   const base = new Date(fechaInput.value + "T00:00:00");
+  
+  // Cargamos los feriados para verificar
+  const anio = base.getFullYear();
+  const feriados = obtenerFeriadosChile([anio, anio + 1]);
+
   state.entregas = SEMANAS_API.map((offsetSemanas, i) => {
-    const fecha = new Date(base);
+    let fecha = new Date(base);
+    // Sumamos las semanas exactas (mantendrá el día jueves si la API 1 fue un jueves)
     fecha.setDate(base.getDate() + offsetSemanas * 7);
+    
+    // REGLA INSTITUCIONAL: Si la fecha cae feriado, se corre al día siguiente (viernes).
+    // Usamos un while por si se da el caso extremo de que jueves y viernes sean feriados seguidos (como el 18 y 19 de septiembre).
+    while (esFeriado(fecha, feriados)) {
+        fecha.setDate(fecha.getDate() + 1); 
+    }
+
     return {
       nombre: `API / PRUEBA ${i + 1}`,
       fecha: formatearFecha(fecha)
@@ -796,8 +808,8 @@ document.getElementById("btn-add-evalua").addEventListener("click", () => {
   renderListaEvalua();
   actualizarBadge("evalua", state.entregas.length);
   actualizarPreview();
-  showToast("✓ 4 evaluaciones generadas automáticamente");
-  guardarProgreso();
+  showToast("✓ Evaluaciones generadas (feriados movidos al viernes)");
+  if (typeof guardarProgreso === 'function') guardarProgreso();
 });
 
 function renderListaEvalua() {
