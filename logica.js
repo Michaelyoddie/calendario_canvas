@@ -557,7 +557,6 @@ function construirTablaEntregas(entregas) {
 
 // =========================================================
 // GENERADOR PRINCIPAL DE HTML
-// (equivalente a generar_html en Python)
 // =========================================================
 
 /**
@@ -620,13 +619,6 @@ function generarHTML({
 
 // =========================================================
 // EXPORTS (para uso en otros archivos JS si se usan módulos)
-// También quedan disponibles globalmente al cargar el script.
-// =========================================================
-// No se usa import/export para máxima compatibilidad con
-// GitHub Pages sin bundler. Todo queda en window global.
-
-// =========================================================
-// LÓGICA DE INTERFAZ (extraída de index.html)
 // =========================================================
 
 function confirmarLimpiezaTotal() {
@@ -637,14 +629,11 @@ function confirmarLimpiezaTotal() {
     }
 
 // ═══════════════════════════════════════════════════════
-// UTILIDADES — toastTimer declarado aquí para evitar error de inicialización
+// UTILIDADES
 let toastTimer;
-
-// Flag para bloquear guardarProgreso mientras se restauran datos
 let _cargando = false;
 
 // ESTADO GLOBAL
-// ═══════════════════════════════════════════════════════
 const state = {
   clases: [],   
   entregas: [],   
@@ -665,7 +654,6 @@ document.querySelectorAll(".tab").forEach(tab => {
   });
 });
 
-// TABS PREVIEW — listeners explícitos como respaldo al onclick del HTML
 document.getElementById('tab-ver-anuncio').addEventListener('click', () => cambiarVistaPreview('anuncio'));
 document.getElementById('tab-ver-correo').addEventListener('click', () => cambiarVistaPreview('correo'));
 
@@ -691,7 +679,7 @@ document.getElementById("toggle-tutorias").addEventListener("change", function (
 });
 
 // ═══════════════════════════════════════════════════════
-// LIVE UPDATE en campos de texto
+// LIVE UPDATE
 // ═══════════════════════════════════════════════════════
 ["tutor","asignatura","zoom","zoom-pin","escuela"].forEach(id => {
   document.getElementById(id).addEventListener("input", actualizarPreview);
@@ -705,7 +693,6 @@ document.getElementById("btn-generar-clases").addEventListener("click", () => {
   const inicio = document.getElementById("inicio-bimestre").value;
   if (!inicio) { showToast("⚠ Ingresa la fecha de inicio del bimestre", true); return; }
 
-  // convertir de YYYY-MM-DD a DD/MM/YYYY
   const [y, m, d] = inicio.split("-");
   const inicioDDMMYYYY = `${d}/${m}/${y}`;
 
@@ -740,7 +727,7 @@ function renderListaClases() {
   const cont = document.getElementById("lista-clases");
   const btn  = document.getElementById("btn-limpiar-clases");
 
-  if (!cont) return; // Seguridad: si no existe el contenedor, no hace nada
+  if (!cont) return;
 
   if (state.clases.length === 0) {
     cont.innerHTML = `<div class="empty-state">El calendario aparecerá aquí luego de generarlo.</div>`;
@@ -748,7 +735,7 @@ function renderListaClases() {
     return;
   }
   
-  if (btn) btn.style.display = "block"; // Solo cambia el estilo si el botón existe
+  if (btn) btn.style.display = "block";
 
   cont.innerHTML = state.clases.map((c, i) => `
     <div class="item-card">
@@ -765,7 +752,6 @@ function renderListaClases() {
   `).join("");
 }
 
-
 function eliminarClase(i) {
   state.clases.splice(i, 1);
   renderListaClases();
@@ -775,10 +761,8 @@ function eliminarClase(i) {
 
 /// ═══════════════════════════════════════════════════════
 // EVALUACIONES - AUTO-GENERACIÓN DESDE FECHA API 1
-// Semanas fijas: API1=sem3, API2=sem4, API3=sem6, API4=sem7
-// Diferencias en semanas desde API1: +0, +1, +3, +4
 // ═══════════════════════════════════════════════════════
-const SEMANAS_API = [0, 1, 3, 4]; // offsets en semanas desde la fecha de API 1
+const SEMANAS_API = [0, 1, 3, 4];
 
 document.getElementById("btn-add-evalua").addEventListener("click", () => {
   const fechaInput = document.getElementById("evalua-fecha");
@@ -789,18 +773,13 @@ document.getElementById("btn-add-evalua").addEventListener("click", () => {
   }
 
   const base = new Date(fechaInput.value + "T00:00:00");
-  
-  // Cargamos los feriados para verificar
   const anio = base.getFullYear();
   const feriados = obtenerFeriadosChile([anio, anio + 1]);
 
   state.entregas = SEMANAS_API.map((offsetSemanas, i) => {
     let fecha = new Date(base);
-    // Sumamos las semanas exactas (mantendrá el día jueves si la API 1 fue un jueves)
     fecha.setDate(base.getDate() + offsetSemanas * 7);
     
-    // REGLA INSTITUCIONAL: Si la fecha cae feriado, se corre al día siguiente (viernes).
-    // Usamos un while por si se da el caso extremo de que jueves y viernes sean feriados seguidos (como el 18 y 19 de septiembre).
     while (esFeriado(fecha, feriados)) {
         fecha.setDate(fecha.getDate() + 1); 
     }
@@ -820,25 +799,58 @@ document.getElementById("btn-add-evalua").addEventListener("click", () => {
   if (typeof guardarProgreso === 'function') guardarProgreso();
 });
 
+// NUEVA VERSIÓN: Con input de fecha para edición manual
 function renderListaEvalua() {
   const cont = document.getElementById("lista-evalua");
   if (state.entregas.length === 0) {
     cont.innerHTML = `<div class="empty-state">Aún no hay evaluaciones agregadas.</div>`;
   } else {
-    cont.innerHTML = state.entregas.map((e, i) => `
+    cont.innerHTML = state.entregas.map((e, i) => {
+      // Convertir DD/MM/YYYY a YYYY-MM-DD para el input type="date"
+      let valFecha = "";
+      if(e.fecha && e.fecha.includes("/")) {
+          const [d, m, y] = e.fecha.split("/");
+          valFecha = `${y}-${m}-${d}`;
+      }
+      return `
       <div class="item-card">
-        <div class="item-card-body">
+        <div class="item-card-body" style="width: 100%;">
           <div class="item-card-title">${e.nombre}</div>
-          <div class="item-card-sub">${e.fecha}</div>
+          <div class="item-card-sub" style="margin-top: 6px;">
+            <input type="date" value="${valFecha}" 
+                   onchange="actualizarFechaEvalua(${i}, this.value)" 
+                   title="Editar fecha de entrega"
+                   style="padding: 4px; border: 1px solid var(--border); border-radius: 4px; font-family: inherit; font-size: 0.9em; width: 100%; box-sizing: border-box;" />
+          </div>
         </div>
         <button class="item-remove" title="Eliminar" onclick="eliminarEvalua(${i})">×</button>
       </div>
-    `).join("");
+    `}).join("");
   }
   
-  // ¡ESTA ES LA LÍNEA NUEVA! Actualiza el desplegable de recordatorios automáticamente
   if (typeof actualizarDropdownRecordatorios === "function") actualizarDropdownRecordatorios();
 }
+
+// NUEVA FUNCIÓN: Permite editar la fecha manualmente
+function actualizarFechaEvalua(index, nuevaFechaYYYYMMDD) {
+    if (!nuevaFechaYYYYMMDD) return;
+    const [y, m, d] = nuevaFechaYYYYMMDD.split("-");
+    state.entregas[index].fecha = `${d}/${m}/${y}`;
+    
+    // Al reordenar las fechas podrian desordenarse visualmente si se cambia el mes, las reordenamos
+    state.entregas.sort((a, b) => convertirFecha(a.fecha) - convertirFecha(b.fecha));
+    
+    // Renombrar APIs para mantener orden lógico 1,2,3,4 tras ordenar
+    state.entregas.forEach((e, idx) => { e.nombre = `API / PRUEBA ${idx + 1}`; });
+    
+    renderListaEvalua();
+    actualizarPreview();
+    guardarProgreso();
+    if (typeof actualizarDropdownRecordatorios === "function") actualizarDropdownRecordatorios();
+    showToast("✓ Fecha actualizada manualmente");
+}
+window.actualizarFechaEvalua = actualizarFechaEvalua;
+
 
 function eliminarEvalua(i) {
   state.entregas.splice(i, 1);
@@ -902,7 +914,6 @@ function renderListaTut() {
 
 function eliminarTut(i) {
   state.tutorias.splice(i, 1);
-  // Renumerar semanas
   state.tutorias.forEach((t, idx) => t.semana = idx + 1);
   semanaCounterTut = state.tutorias.length + 1;
   renderListaTut();
@@ -964,14 +975,12 @@ function actualizarPreview() {
     escuela:     document.getElementById("escuela").value,
   });
 
-  // iframe preview via srcdoc (compatible con archivos locales)
   const frame = document.getElementById("preview-frame");
   frame.srcdoc = `<!DOCTYPE html><html><head>
     <meta charset="UTF-8">
     <style>body{font-family:Arial,sans-serif;padding:20px;font-size:14px;color:#222;}</style>
   </head><body>${html}</body></html>`;
 
-  // código
   document.getElementById("code-area").value = html;
 }
 
@@ -1012,9 +1021,6 @@ function showToast(msg, isError = false) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2800);
 }
 
-// Preview inicial — se llama desde cargarProgreso al terminar
-
-
 // --- MEJORA: PERSISTENCIA DE DATOS (LOCALSTORAGE) ---
 
 function guardarFormulario() {
@@ -1027,7 +1033,7 @@ function guardarFormulario() {
         inicio:        document.getElementById('inicio-bimestre').value,
         zoomPin:       document.getElementById('zoom-pin') ? document.getElementById('zoom-pin').value : "",
         docenteNombre: document.getElementById('docente-nombre') ? document.getElementById('docente-nombre').value : "",
-        nombreBimestre: document.getElementById('nombre-bimestre') ? document.getElementById('nombre-bimestre').value : "" // <--- NUEVO
+        nombreBimestre: document.getElementById('nombre-bimestre') ? document.getElementById('nombre-bimestre').value : "" 
     };
     localStorage.setItem('db_formulario', JSON.stringify(formulario));
 }
@@ -1052,7 +1058,6 @@ function guardarProgreso() {
 function cargarProgreso() {
     _cargando = true;
 
-    // --- Restaurar LISTAS (clases, entregas, etc.) ---
     const memListas = localStorage.getItem('db_listas');
     if (memListas) {
         const listas = JSON.parse(memListas);
@@ -1063,7 +1068,6 @@ function cargarProgreso() {
         state.modo        = listas.modo        || "clases";
     }
 
-    // --- Restaurar FORMULARIO (tutor, asignatura, zoom, etc.) ---
     const memForm = localStorage.getItem('db_formulario');
     if (memForm) {
         const f = JSON.parse(memForm);
@@ -1075,7 +1079,7 @@ function cargarProgreso() {
             'inicio-bimestre': f.inicio,
             'zoom-pin':        f.zoomPin,
             'docente-nombre':  f.docenteNombre,
-            'nombre-bimestre': f.nombreBimestre // <--- NUEVO
+            'nombre-bimestre': f.nombreBimestre
         };
         for (const [id, valor] of Object.entries(campos)) {
             const el = document.getElementById(id);
@@ -1083,12 +1087,10 @@ function cargarProgreso() {
         }
     }
 
-    // Restaurar botón de modo clases
     document.querySelectorAll('.modo-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.modo === state.modo);
     });
 
-    // Renderizar listas y badges
     renderListaClases();
     renderListaEvalua();
     renderListaTut();
@@ -1100,15 +1102,12 @@ function cargarProgreso() {
     actualizarPreview();
 }
 
-// Escuchador global: guarda solo el formulario al escribir
-// Las listas se guardan explícitamente cuando se modifican
 document.addEventListener('input', (e) => {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(e.target.tagName)) {
         guardarFormulario();
     }
 });
 
-// Al cargar la ventana, recuperamos la información
 document.addEventListener('DOMContentLoaded', cargarProgreso);
 
 // --- LÓGICA DEL PANEL ARRASTRABLE (RESIZER) ---
@@ -1125,7 +1124,6 @@ resizer.addEventListener('mousedown', (e) => {
 function resize(e) {
     const newWidth = e.clientX;
     const appContainer = document.querySelector('.app');
-    // Forzamos el cambio de columnas explícitamente
     if (newWidth > 300 && newWidth < 900) { 
         appContainer.style.display = "grid"; 
         appContainer.style.gridTemplateColumns = newWidth + "px 6px 1fr";
@@ -1143,30 +1141,27 @@ function cambiarVistaPreview(tipo) {
     const vistaAnuncio = document.getElementById('preview-anuncio-container');
     const vistaCorreo = document.getElementById('preview-correo-container');
     const vistaProrroga = document.getElementById('preview-prorroga-container');
-    const vistaRecordatorio = document.getElementById('preview-recordatorio-container'); // NUEVO
-    const vistaApertura = document.getElementById('preview-apertura-container'); // <--- NUEVO
+    const vistaRecordatorio = document.getElementById('preview-recordatorio-container');
+    const vistaApertura = document.getElementById('preview-apertura-container');
     
     const tabAnuncio = document.getElementById('tab-ver-anuncio');
     const tabCorreo = document.getElementById('tab-ver-correo');
     const tabProrroga = document.getElementById('tab-ver-prorroga');
-    const tabRecordatorio = document.getElementById('tab-ver-recordatorio'); // NUEVO
-    const tabApertura = document.getElementById('tab-ver-apertura'); // <--- NUEVO
+    const tabRecordatorio = document.getElementById('tab-ver-recordatorio');
+    const tabApertura = document.getElementById('tab-ver-apertura');
 
-    // Ocultar todas
     if (vistaAnuncio) vistaAnuncio.style.display = 'none';
     if (vistaCorreo) vistaCorreo.style.display = 'none';
     if (vistaProrroga) vistaProrroga.style.display = 'none';
-    if (vistaRecordatorio) vistaRecordatorio.style.display = 'none'; // NUEVO
-    if (vistaApertura) vistaApertura.style.display = 'none'; // <--- NUEVO
+    if (vistaRecordatorio) vistaRecordatorio.style.display = 'none';
+    if (vistaApertura) vistaApertura.style.display = 'none';
     
-    // Quitar estilos activos
     if (tabAnuncio) { tabAnuncio.classList.remove('active'); tabAnuncio.style.color = 'var(--text-muted)'; }
     if (tabCorreo) { tabCorreo.classList.remove('active'); tabCorreo.style.color = 'var(--text-muted)'; }
     if (tabProrroga) { tabProrroga.classList.remove('active'); tabProrroga.style.color = 'var(--text-muted)'; }
-    if (tabRecordatorio) { tabRecordatorio.classList.remove('active'); tabRecordatorio.style.color = 'var(--text-muted)'; } // NUEVO
-    if (tabApertura) { tabApertura.classList.remove('active'); tabApertura.style.color = 'var(--text-muted)'; } // <--- NUEVO
+    if (tabRecordatorio) { tabRecordatorio.classList.remove('active'); tabRecordatorio.style.color = 'var(--text-muted)'; }
+    if (tabApertura) { tabApertura.classList.remove('active'); tabApertura.style.color = 'var(--text-muted)'; }
 
-    // Activar seleccionada
     if (tipo === 'anuncio') {
         if (vistaAnuncio) vistaAnuncio.style.display = 'block';
         if (tabAnuncio) { tabAnuncio.classList.add('active'); tabAnuncio.style.color = 'var(--accent)'; }
@@ -1177,13 +1172,13 @@ function cambiarVistaPreview(tipo) {
     } else if (tipo === 'prorroga') {
         if (vistaProrroga) vistaProrroga.style.display = 'block';
         if (tabProrroga) { tabProrroga.classList.add('active'); tabProrroga.style.color = 'var(--accent)'; }
-    } else if (tipo === 'recordatorio') { // NUEVO
+    } else if (tipo === 'recordatorio') {
         if (vistaRecordatorio) vistaRecordatorio.style.display = 'block';
         if (tabRecordatorio) { tabRecordatorio.classList.add('active'); tabRecordatorio.style.color = 'var(--accent)'; }
-    } else if (tipo === 'apertura') { // <--- NUEVO
+    } else if (tipo === 'apertura') {
         if (vistaApertura) vistaApertura.style.display = 'block';
         if (tabApertura) { tabApertura.classList.add('active'); tabApertura.style.color = 'var(--accent)'; }
-        actualizarMensajeApertura(); // Forzamos actualización al entrar
+        actualizarMensajeApertura();
     }
 }
 window.cambiarVistaPreview = cambiarVistaPreview;
@@ -1330,12 +1325,12 @@ function copiarContenidoActual() {
         if(!prorrogaDiv || prorrogaDiv.innerHTML.includes("empty-state")) { showToast("⚠ Selecciona fechas primero", true); return; }
         _copiarHtmlFormateado(prorrogaDiv, "✓ Mensaje de prórroga copiado");
 
-    } else if (vistaActiva === 'tab-ver-recordatorio') { // NUEVO
+    } else if (vistaActiva === 'tab-ver-recordatorio') {
         const recordatorioDiv = document.getElementById('preview-recordatorio');
         if(!recordatorioDiv || recordatorioDiv.innerHTML.includes("empty-state")) { showToast("⚠ Selecciona la fecha de cierre primero", true); return; }
         _copiarHtmlFormateado(recordatorioDiv, "✓ Mensaje de recordatorio copiado");
 
-    } else if (vistaActiva === 'tab-ver-apertura') { // <--- NUEVO
+    } else if (vistaActiva === 'tab-ver-apertura') {
         const aperturaDiv = document.getElementById('preview-apertura');
         if(!aperturaDiv || aperturaDiv.innerHTML.includes("empty-state")) { 
             showToast("⚠ Faltan datos para generar el anuncio", true); 
@@ -1349,7 +1344,6 @@ function copiarContenidoActual() {
     }
 }
 
-// Pequeña función auxiliar para evitar repetir el código de copiado rico (HTML)
 function _copiarHtmlFormateado(elementoDiv, mensajeExito) {
     const htmlContent = elementoDiv.innerHTML;
     const htmlFull = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>${htmlContent}</body></html>`;
@@ -1366,7 +1360,6 @@ function _copiarHtmlFormateado(elementoDiv, mensajeExito) {
 }
 
 function _copiarPorSeleccion(correoDiv) {
-    // Fallback: intentar con ClipboardItem de texto plano
     const texto = correoDiv.innerText || correoDiv.textContent;
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(texto)
@@ -1377,7 +1370,6 @@ function _copiarPorSeleccion(correoDiv) {
     }
 }
 
-
 // ═══════════════════════════════════════════════════════
 // CONTROLES DE ZOOM PARA EL PREVIEW
 // ═══════════════════════════════════════════════════════
@@ -1386,17 +1378,14 @@ let currentZoom = 1;
 function cambiarZoom(delta) {
     currentZoom += delta;
     
-    // Limitar el zoom (mínimo 40%, máximo 160%)
     if (currentZoom < 0.4) currentZoom = 0.4;
     if (currentZoom > 1.6) currentZoom = 1.6;
     
-    // Actualizar el número en la interfaz
     const spanNivel = document.getElementById('zoom-nivel');
     if (spanNivel) {
         spanNivel.textContent = Math.round(currentZoom * 100) + '%';
     }
     
-    // Aplicar zoom a los contenedores padre en lugar de los elementos directos
     const vistaAnuncio = document.getElementById("preview-anuncio-container");
     if (vistaAnuncio) vistaAnuncio.style.zoom = currentZoom;
 
@@ -1409,11 +1398,10 @@ function cambiarZoom(delta) {
     const vistaRecordatorio = document.getElementById("preview-recordatorio-container");
     if (vistaRecordatorio) vistaRecordatorio.style.zoom = currentZoom;
 
-    const vistaApertura = document.getElementById("preview-apertura-container"); // <--- NUEVO
+    const vistaApertura = document.getElementById("preview-apertura-container");
     if (vistaApertura) vistaApertura.style.zoom = currentZoom;
 }
 
-// Exponer la función globalmente para que el HTML pueda llamarla
 window.cambiarZoom = cambiarZoom;
 
 // ═══════════════════════════════════════════════════════
@@ -1436,16 +1424,14 @@ function actualizarMensajeProrroga() {
         return;
     }
 
-    // Transformar de YYYY-MM-DD a texto natural en español
     const formatearFecha = (fechaStr) => {
         const [y, m, d] = fechaStr.split("-").map(Number);
-        const date = new Date(y, m - 1, d); // Se crea así para evitar desfases de zona horaria
+        const date = new Date(y, m - 1, d); 
         const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
         const meses = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
         return `${dias[date.getDay()]} ${String(d).padStart(2, '0')} de ${meses[date.getMonth()]}`;
     };
 
-    // Transformar a formato corto Ej: 08/5
     const formatoCorto = (fechaStr) => {
         const [y, m, d] = fechaStr.split("-").map(Number);
         return `${String(d).padStart(2, '0')}/${m}`; 
@@ -1456,7 +1442,6 @@ function actualizarMensajeProrroga() {
     const cortoInicio = formatoCorto(valInicio);
     const cortoFin = formatoCorto(valFin);
 
-    // Plantilla HTML idéntica a la imagen adjunta
     const html = `
 <div style="font-family: Arial, sans-serif; font-size: 11pt; color: #222; line-height: 1.5;">
     <h2 style="font-size: 18pt; color: #1a365d; margin-bottom: 20px;">
@@ -1472,12 +1457,11 @@ function actualizarMensajeProrroga() {
     previewProrroga.innerHTML = html;
 }
 
-// Escuchar cambios en vivo
 if (inputInicioProrroga) inputInicioProrroga.addEventListener("input", actualizarMensajeProrroga);
 if (inputFinProrroga) inputFinProrroga.addEventListener("input", actualizarMensajeProrroga);
 
 // ═══════════════════════════════════════════════════════
-// GENERADOR DE MENSAJES (RECORDATORIOS) CONECTADO A TAREAS
+// GENERADOR DE MENSAJES (RECORDATORIOS)
 // ═══════════════════════════════════════════════════════
 
 const inputRecEval = document.getElementById("rec-evaluacion");
@@ -1503,18 +1487,15 @@ function actualizarMensajeRecordatorio() {
     const indexEval = inputRecEval.value;
     const valHora = inputRecHora ? (inputRecHora.value || "23:59") : "23:59";
 
-    // Si no hay tareas generadas, mostramos un mensaje de advertencia
     if (indexEval === "" || state.entregas.length === 0) {
         previewRecordatorio.innerHTML = '<div class="empty-state" style="color: #666; border: none;">Ve a la pestaña <strong>③ Tareas</strong>, genera las evaluaciones y luego vuelve aquí.</div>';
         return;
     }
 
-    // Extraemos la tarea exacta desde la memoria global de la App
     const entrega = state.entregas[indexEval];
-    const valEval = entrega.nombre; // Ej: API / PRUEBA 1
-    const valFechaStr = entrega.fecha; // Ej: 12/06/2026
+    const valEval = entrega.nombre;
+    const valFechaStr = entrega.fecha; 
 
-    // Transformamos "DD/MM/YYYY" a texto natural
     const [d, m, y] = valFechaStr.split("/").map(Number);
     const date = new Date(y, m - 1, d);
     const dias = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -1542,7 +1523,6 @@ function actualizarMensajeRecordatorio() {
 if (inputRecEval) inputRecEval.addEventListener("change", actualizarMensajeRecordatorio);
 if (inputRecHora) inputRecHora.addEventListener("input", actualizarMensajeRecordatorio);
 
-// Inicializar el dropdown al cargar (por si hay datos guardados en LocalStorage)
 setTimeout(actualizarDropdownRecordatorios, 500);
 
 // ═══════════════════════════════════════════════════════
@@ -1563,11 +1543,9 @@ function actualizarMensajeApertura() {
         return;
     }
 
-    // Transformar de YYYY-MM-DD a DD/MM
     const [y, m, d] = valInicio.split("-");
     const fechaCorta = `${d}/${m}`;
 
-    // Recreamos el estilo de la imagen adjunta, incluyendo el resaltado sutil
     const html = `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #333; line-height: 1.6;">
     <h2 style="font-size: 18pt; color: #2c3e50; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
@@ -1575,7 +1553,7 @@ function actualizarMensajeApertura() {
     </h2>
     <p>Estimados/as estudiantes:</p><br>
     <p>Nos complace informarles que las asignaturas del presente bimestre estarán disponibles a partir de hoy en nuestra plataforma CANVAS. Les invitamos a revisar los contenidos, materiales de estudio y demás recursos que hemos preparado para ustedes.</p><br>
-    <p><span style="background-color: #fcf4cd; padding: 2px 4px;">Asimismo, les recordamos que el bimestre inicia el día ${fechaCorta}, día que podrán ver en anuncios la programación de sus clases y fechas de entrega de sus tareas o pruebas.</span></p><br>
+    <p><span style="background-color: #fcf4cd; padding: 2px 4px;">Asimismo, les recordamos que las evaluaciones darán inicio el día ${fechaCorta}, día que comienza el bimestre.</span></p><br>
     <p>Les recomendamos aprovechar este espacio para familiarizarse con los contenidos y prepararse adecuadamente para el comienzo de las actividades académicas.</p><br>
     <p>Agradecemos su atención y les deseamos un semestre exitoso.</p><br>
     <p>Atentamente,</p><br>
@@ -1585,6 +1563,5 @@ function actualizarMensajeApertura() {
     previewApertura.innerHTML = html;
 }
 
-// Escuchar cambios en vivo en ambos campos
 if (inputNombreBimestre) inputNombreBimestre.addEventListener("input", actualizarMensajeApertura);
 if (inputInicioGlobal) inputInicioGlobal.addEventListener("input", actualizarMensajeApertura);
