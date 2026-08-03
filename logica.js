@@ -471,7 +471,9 @@ function construirTablaHorarios(filas) {
       <td style="text-align: center;">${obs}</td>
     </tr>`;
   }
-  html += `\n  </tbody>\n</table>`;
+  html += `
+  </tbody>
+</table>`;
   return html;
 }
 
@@ -497,7 +499,9 @@ function construirTablaTutorias(tutorias) {
       <td style="text-align: center;">${obs}</td>
     </tr>`;
   }
-  html += `\n  </tbody>\n</table>`;
+  html += `
+  </tbody>
+</table>`;
   return html;
 }
 
@@ -522,7 +526,9 @@ function construirTablaGrabaciones(grabaciones) {
       <td style="text-align: center;">${enlace}</td>
     </tr>`;
   }
-  html += `\n  </tbody>\n</table>`;
+  html += `
+  </tbody>
+</table>`;
   return html;
 }
 
@@ -543,7 +549,9 @@ function construirTablaEntregas(entregas) {
       <td style="text-align: center;">${e.fecha}</td>
     </tr>`;
   });
-  html += `\n  </tbody>\n</table>`;
+  html += `
+  </tbody>
+</table>`;
   return html;
 }
 
@@ -1018,7 +1026,8 @@ function guardarFormulario() {
         escuela:       document.getElementById('escuela').value,
         inicio:        document.getElementById('inicio-bimestre').value,
         zoomPin:       document.getElementById('zoom-pin') ? document.getElementById('zoom-pin').value : "",
-        docenteNombre: document.getElementById('docente-nombre') ? document.getElementById('docente-nombre').value : ""
+        docenteNombre: document.getElementById('docente-nombre') ? document.getElementById('docente-nombre').value : "",
+        nombreBimestre: document.getElementById('nombre-bimestre') ? document.getElementById('nombre-bimestre').value : "" // <--- NUEVO
     };
     localStorage.setItem('db_formulario', JSON.stringify(formulario));
 }
@@ -1065,7 +1074,8 @@ function cargarProgreso() {
             'escuela':         f.escuela,
             'inicio-bimestre': f.inicio,
             'zoom-pin':        f.zoomPin,
-            'docente-nombre':  f.docenteNombre
+            'docente-nombre':  f.docenteNombre,
+            'nombre-bimestre': f.nombreBimestre // <--- NUEVO
         };
         for (const [id, valor] of Object.entries(campos)) {
             const el = document.getElementById(id);
@@ -1134,23 +1144,27 @@ function cambiarVistaPreview(tipo) {
     const vistaCorreo = document.getElementById('preview-correo-container');
     const vistaProrroga = document.getElementById('preview-prorroga-container');
     const vistaRecordatorio = document.getElementById('preview-recordatorio-container'); // NUEVO
+    const vistaApertura = document.getElementById('preview-apertura-container'); // <--- NUEVO
     
     const tabAnuncio = document.getElementById('tab-ver-anuncio');
     const tabCorreo = document.getElementById('tab-ver-correo');
     const tabProrroga = document.getElementById('tab-ver-prorroga');
     const tabRecordatorio = document.getElementById('tab-ver-recordatorio'); // NUEVO
+    const tabApertura = document.getElementById('tab-ver-apertura'); // <--- NUEVO
 
     // Ocultar todas
     if (vistaAnuncio) vistaAnuncio.style.display = 'none';
     if (vistaCorreo) vistaCorreo.style.display = 'none';
     if (vistaProrroga) vistaProrroga.style.display = 'none';
     if (vistaRecordatorio) vistaRecordatorio.style.display = 'none'; // NUEVO
+    if (vistaApertura) vistaApertura.style.display = 'none'; // <--- NUEVO
     
     // Quitar estilos activos
     if (tabAnuncio) { tabAnuncio.classList.remove('active'); tabAnuncio.style.color = 'var(--text-muted)'; }
     if (tabCorreo) { tabCorreo.classList.remove('active'); tabCorreo.style.color = 'var(--text-muted)'; }
     if (tabProrroga) { tabProrroga.classList.remove('active'); tabProrroga.style.color = 'var(--text-muted)'; }
     if (tabRecordatorio) { tabRecordatorio.classList.remove('active'); tabRecordatorio.style.color = 'var(--text-muted)'; } // NUEVO
+    if (tabApertura) { tabApertura.classList.remove('active'); tabApertura.style.color = 'var(--text-muted)'; } // <--- NUEVO
 
     // Activar seleccionada
     if (tipo === 'anuncio') {
@@ -1166,6 +1180,10 @@ function cambiarVistaPreview(tipo) {
     } else if (tipo === 'recordatorio') { // NUEVO
         if (vistaRecordatorio) vistaRecordatorio.style.display = 'block';
         if (tabRecordatorio) { tabRecordatorio.classList.add('active'); tabRecordatorio.style.color = 'var(--accent)'; }
+    } else if (tipo === 'apertura') { // <--- NUEVO
+        if (vistaApertura) vistaApertura.style.display = 'block';
+        if (tabApertura) { tabApertura.classList.add('active'); tabApertura.style.color = 'var(--accent)'; }
+        actualizarMensajeApertura(); // Forzamos actualización al entrar
     }
 }
 window.cambiarVistaPreview = cambiarVistaPreview;
@@ -1317,6 +1335,14 @@ function copiarContenidoActual() {
         if(!recordatorioDiv || recordatorioDiv.innerHTML.includes("empty-state")) { showToast("⚠ Selecciona la fecha de cierre primero", true); return; }
         _copiarHtmlFormateado(recordatorioDiv, "✓ Mensaje de recordatorio copiado");
 
+    } else if (vistaActiva === 'tab-ver-apertura') { // <--- NUEVO
+        const aperturaDiv = document.getElementById('preview-apertura');
+        if(!aperturaDiv || aperturaDiv.innerHTML.includes("empty-state")) { 
+            showToast("⚠ Faltan datos para generar el anuncio", true); 
+            return; 
+        }
+        _copiarHtmlFormateado(aperturaDiv, "✓ Mensaje de apertura copiado");
+
     } else {
         const html = document.getElementById('code-area').value;
         navigator.clipboard.writeText(html).then(() => showToast("✓ HTML del Anuncio copiado"));
@@ -1382,6 +1408,9 @@ function cambiarZoom(delta) {
 
     const vistaRecordatorio = document.getElementById("preview-recordatorio-container");
     if (vistaRecordatorio) vistaRecordatorio.style.zoom = currentZoom;
+
+    const vistaApertura = document.getElementById("preview-apertura-container"); // <--- NUEVO
+    if (vistaApertura) vistaApertura.style.zoom = currentZoom;
 }
 
 // Exponer la función globalmente para que el HTML pueda llamarla
@@ -1515,3 +1544,47 @@ if (inputRecHora) inputRecHora.addEventListener("input", actualizarMensajeRecord
 
 // Inicializar el dropdown al cargar (por si hay datos guardados en LocalStorage)
 setTimeout(actualizarDropdownRecordatorios, 500);
+
+// ═══════════════════════════════════════════════════════
+// GENERADOR DE MENSAJES (APERTURA)
+// ═══════════════════════════════════════════════════════
+const inputNombreBimestre = document.getElementById("nombre-bimestre");
+const previewApertura = document.getElementById("preview-apertura");
+const inputInicioGlobal = document.getElementById("inicio-bimestre");
+
+function actualizarMensajeApertura() {
+    if (!inputNombreBimestre || !previewApertura) return;
+
+    const valBimestre = inputNombreBimestre.value.trim();
+    const valInicio = inputInicioGlobal ? inputInicioGlobal.value : "";
+
+    if (!valBimestre || !valInicio) {
+        previewApertura.innerHTML = '<div class="empty-state" style="color: #666; border: none;">Falta ingresar el "Bimestre a aperturar" (pestaña Apertura) o el "Inicio del bimestre" (pestaña Clases).</div>';
+        return;
+    }
+
+    // Transformar de YYYY-MM-DD a DD/MM
+    const [y, m, d] = valInicio.split("-");
+    const fechaCorta = `${d}/${m}`;
+
+    // Recreamos el estilo de la imagen adjunta, incluyendo el resaltado sutil
+    const html = `
+<div style="font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #333; line-height: 1.6;">
+    <h2 style="font-size: 18pt; color: #2c3e50; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+        📚 Apertura de Asignaturas bimestre ${valBimestre}
+    </h2>
+    <p>Estimados/as estudiantes:</p><br>
+    <p>Nos complace informarles que las asignaturas del presente bimestre estarán disponibles a partir de hoy en nuestra plataforma CANVAS. Les invitamos a revisar los contenidos, materiales de estudio y demás recursos que hemos preparado para ustedes.</p><br>
+    <p><span style="background-color: #fcf4cd; padding: 2px 4px;">Asimismo, les recordamos que el bimestre inicia el día ${fechaCorta}, día que podrán ver en anuncios la programación de sus clases y fechas de entrega de sus tareas o pruebas.</span></p><br>
+    <p>Les recomendamos aprovechar este espacio para familiarizarse con los contenidos y prepararse adecuadamente para el comienzo de las actividades académicas.</p><br>
+    <p>Agradecemos su atención y les deseamos un semestre exitoso.</p><br>
+    <p>Atentamente,</p><br>
+    <p>Tutor académico.</p>
+</div>`;
+
+    previewApertura.innerHTML = html;
+}
+
+// Escuchar cambios en vivo en ambos campos
+if (inputNombreBimestre) inputNombreBimestre.addEventListener("input", actualizarMensajeApertura);
+if (inputInicioGlobal) inputInicioGlobal.addEventListener("input", actualizarMensajeApertura);

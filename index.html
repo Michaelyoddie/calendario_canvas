@@ -31,6 +31,7 @@
       <div class="tab" data-tab="extras">④ Tutorias</div>
       <div class="tab" data-tab="mensajes">⑤ Prórrogas</div>
       <div class="tab" data-tab="recordatorios">⑥ Recordatorios</div>
+      <div class="tab" data-tab="apertura">⑦ Apertura</div>
     </div>
 
     <div class="section active" id="tab-datos">
@@ -209,6 +210,18 @@
         Selecciona la evaluación y ve a la pestaña <strong>RECORDATORIO API</strong> en el panel derecho para previsualizar y copiar el anuncio.
       </p>
     </div>
+    
+    <div class="section" id="tab-apertura">
+      <div class="field-group">
+        <label>Bimestre a aperturar</label>
+        <input type="text" id="nombre-bimestre" placeholder="Ej: 2A-2026" />
+      </div>
+      <div class="divider"></div>
+      <p class="help-text" style="text-align: center; margin-top: 10px;">
+        La fecha de inicio se tomará automáticamente del campo <strong>"Inicio del bimestre"</strong> en la pestaña ② Clases.<br><br>
+        Ve a la pestaña <strong>APERTURA</strong> en el panel derecho para previsualizar y copiar el anuncio.
+      </p>
+    </div>
 
   </div>
 
@@ -221,6 +234,7 @@
         <div class="preview-tab" onclick="cambiarVistaPreview('correo')" id="tab-ver-correo">CORREO DOCENTE</div>
         <div class="preview-tab" onclick="cambiarVistaPreview('prorroga')" id="tab-ver-prorroga">ANUNCIOS PRORROGAS </div>
         <div class="preview-tab" onclick="cambiarVistaPreview('recordatorio')" id="tab-ver-recordatorio">RECORDATORIO API</div>
+        <div class="preview-tab" onclick="cambiarVistaPreview('apertura')" id="tab-ver-apertura">APERTURA</div>
       </div>
       <div class="preview-actions">
         <div class="zoom-controls">
@@ -248,6 +262,11 @@
       <div id="preview-recordatorio-container" class="preview-container">
         <div id="preview-recordatorio" class="preview-prorroga" style="height: 100%; overflow-y: auto;">
           <div class="empty-state empty-state-prorroga">Selecciona la fecha de cierre en el panel izquierdo para generar el mensaje.</div>
+        </div>
+      </div>
+      <div id="preview-apertura-container" class="preview-container">
+        <div id="preview-apertura" class="preview-prorroga" style="height: 100%; overflow-y: auto;">
+          <div class="empty-state empty-state-prorroga">Ingresa el nombre del bimestre y la fecha de inicio (en ② Clases) para generar el mensaje.</div>
         </div>
       </div>
       <textarea id="code-area"></textarea>
